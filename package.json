@@ -86,7 +86,83 @@
         "mac": "cmd+alt+m",
         "when": "!terminalFocus"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "AI Commit Messages",
+      "properties": {
+        "aiCommitMessages.provider": {
+          "type": "string",
+          "enum": [
+            "ollama",
+            "openai-compat"
+          ],
+          "default": "ollama",
+          "enumDescriptions": [
+            "Ollama's native API (/api/chat).",
+            "Any OpenAI-compatible endpoint (/v1/chat/completions)."
+          ],
+          "scope": "machine-overridable",
+          "markdownDescription": "Backend to generate with."
+        },
+        "aiCommitMessages.endpoint": {
+          "type": "string",
+          "default": "http://127.0.0.1:11434",
+          "scope": "machine",
+          "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint. Machine-scoped on purpose: it must differ between local and remote, it is not synced, and a cloned repository must not be able to redirect your staged diff. Set it per-remote in the **Remote** tab."
+        },
+        "aiCommitMessages.model": {
+          "type": "string",
+          "default": "qwen2.5-coder:7b",
+          "scope": "machine-overridable",
+          "markdownDescription": "Model to generate with. Must exist on the server."
+        },
+        "aiCommitMessages.language": {
+          "type": "string",
+          "default": "pt-BR",
+          "scope": "window",
+          "markdownDescription": "Language of the generated message, as a tag like `pt-BR` or `en`."
+        },
+        "aiCommitMessages.promptTemplate": {
+          "type": "string",
+          "default": "",
+          "editPresentation": "multilineText",
+          "scope": "window",
+          "markdownDescription": "Replaces the built-in rules entirely. `{language}`, `{types}` and `{maxBodyWords}` are substituted. Leave empty to use the built-in prompt."
+        },
+        "aiCommitMessages.maxDiffChars": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 200,
+          "maximum": 500000,
+          "scope": "window",
+          "markdownDescription": "Diff characters to send when the model's context window is unknown. When it is known, the budget is computed from it instead."
+        },
+        "aiCommitMessages.maxBodyWords": {
+          "type": "number",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 40,
+          "scope": "window",
+          "markdownDescription": "Maximum words per body line."
+        },
+        "aiCommitMessages.temperature": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 1,
+          "scope": "machine-overridable",
+          "markdownDescription": "Sampling temperature. `0` is the right default for structured output."
+        },
+        "aiCommitMessages.timeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1000,
+          "maximum": 600000,
+          "scope": "machine-overridable",
+          "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -117,5 +193,17 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.0",
     "vitest": "^4.1.10"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "The staged diff is sent to the configured model endpoint.",
+      "restrictedConfigurations": [
+        "aiCommitMessages.endpoint",
+        "aiCommitMessages.model",
+        "aiCommitMessages.promptTemplate",
+        "aiCommitMessages.provider"
+      ]
+    }
   }
 }

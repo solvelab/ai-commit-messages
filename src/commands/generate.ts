@@ -1,18 +1,26 @@
 import * as vscode from 'vscode'
 
+import { currentSettings } from '../config.js'
 import { collectChanges } from '../git/collect.js'
 import { getGitApi } from '../git/api.js'
 import { createCollectHost } from '../git/collectHost.js'
 import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
 import { getLog } from '../log.js'
+import { withAbort } from '../net.js'
+import { OllamaProvider } from '../providers/ollama.js'
+import { ProviderError, type CommitProvider, type FetchLike } from '../providers/types.js'
+import { generateMessage, PipelineError } from '../prompt/pipeline.js'
+import { sanitize } from '../prompt/sanitize.js'
+import { packWithinBudget } from '../budget/pack.js'
+import { diffBudgetChars, type Settings } from '../settings.js'
 
-/**
- * Entry point of the extension: turns the staged changes into a commit message.
- *
- * The handler MUST return a promise that settles only when the work is done — the SCM action
- * runner keeps the toolbar in its running state for exactly as long as this promise is pending.
- */
+function createProvider(settings: Settings): CommitProvider {
+  // `globalThis.fetch` here is the one the extension host patched for proxy and certificates.
+  // That is deliberate: fighting the patch is how LAN calls break in corporate setups.
+  return new OllamaProvider({ endpoint: settings.endpoint, fetch: globalThis.fetch as FetchLike })
+}
+
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
 
@@ -32,18 +40,18 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
   }
   log.info(`repository resolved from ${source}: ${repository.rootUri.fsPath}`)
 
+  const { settings, problems } = currentSettings(repository.rootUri)
+  for (const problem of problems) {
+    log.warn(`configuration: ${problem.message}`)
+  }
+
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
       title: 'AI Commit Messages: generating…',
       cancellable: true,
     },
-    async (_progress, token) => {
-      if (token.isCancellationRequested) {
-        return
-      }
-
-      // The git extension caches state; refresh before reading it.
+    async (progress, token) => {
       await repository.status()
       const changes = await collectChanges(createCollectHost(repository))
 
@@ -57,24 +65,154 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
         )
         return
       }
-
       if (changes.source === 'worktree') {
-        log.info('nothing staged — describing working tree changes instead')
         void vscode.window.showWarningMessage(
           'Nothing is staged, so the working tree changes were used instead.',
         )
       }
 
-      log.info(
-        `collected ${changes.files.length} file(s) from ${changes.source}` +
-          `${changes.usedWholeDiffFallback ? ' (whole-diff fallback)' : ''}, ` +
-          `${changes.skipped.length} skipped`,
-      )
+      const provider = createProvider(settings)
 
-      // Sending it to a model lands in #8; formatting in #9.
-      void vscode.window.showInformationMessage(
-        `AI Commit Messages: ${changes.files.length} file(s) ready, but no model is wired yet — see issue #8.`,
-      )
+      const outcome = await withAbort({ token, timeoutMs: settings.timeoutMs }, async signal => {
+        progress.report({ message: 'reading the model' })
+        // Capabilities decide the budget and whether the reasoning trace must be suppressed.
+        // A failure here is not fatal: generation still works with the fallback budget.
+        let contextTokens: number | undefined
+        let thinking = false
+        try {
+          const capabilities = await provider.describeModel(settings.model, signal)
+          contextTokens = capabilities.contextLength
+          thinking = capabilities.thinking
+          log.info(
+            `model ${settings.model}: context=${contextTokens ?? 'unknown'} thinking=${thinking}`,
+          )
+        } catch (error) {
+          log.warn(`could not describe ${settings.model}: ${String(error)}`)
+        }
+
+        const budget = diffBudgetChars({
+          ...(contextTokens ? { contextTokens } : {}),
+          systemPromptChars: 1400,
+          maxOutputTokens: 512,
+          fallbackChars: settings.maxDiffChars,
+        })
+        const { kept, omitted } = packWithinBudget(changes.files, budget)
+        if (omitted.length > 0) {
+          log.info(`omitted from the prompt to fit ${budget} chars: ${omitted.join(', ')}`)
+        }
+
+        progress.report({ message: `${kept.length} file(s)` })
+        return generateMessage(
+          provider,
+          kept,
+          {
+            model: settings.model,
+            maxBodyWords: settings.maxBodyWords,
+            temperature: settings.temperature,
+            systemTemplate: settings.promptTemplate,
+            language: { tag: settings.language, name: languageName(settings.language) },
+            repository: repository.rootUri.path.split('/').pop() ?? '',
+            branch: repository.state.HEAD?.name ?? '',
+            omitted,
+            suppressThinking: thinking,
+            sanitize,
+            ...(contextTokens ? { contextTokens: Math.min(contextTokens, 32_768) } : {}),
+          },
+          signal,
+        )
+      }).catch((error: unknown) => {
+        reportFailure(error, settings)
+        return undefined
+      })
+
+      if (!outcome) {
+        return
+      }
+      if (!outcome.ok) {
+        log.info(`generation ${outcome.reason}`)
+        if (outcome.reason === 'timeout') {
+          void vscode.window.showErrorMessage(
+            `The model did not answer within ${Math.round(settings.timeoutMs / 1000)}s. A cold model can take longer to load.`,
+          )
+        }
+        return
+      }
+
+      const { message, retried, degradedToText, droppedBodyEntries } = outcome.value
+      if (retried) {
+        log.info('the first reply broke the format; a corrective retry was used')
+      }
+      if (degradedToText) {
+        log.info('the model refused the schema; plain text was parsed instead')
+      }
+      for (const dropped of droppedBodyEntries) {
+        log.info(`body entry dropped for exceeding the word budget: ${dropped}`)
+      }
+
+      repository.inputBox.value = message
+      log.info('commit message written to the input box')
     },
   )
+}
+
+function languageName(tag: string): string {
+  const names: Record<string, string> = {
+    'pt-BR': 'Brazilian Portuguese',
+    pt: 'Portuguese',
+    en: 'English',
+    'en-US': 'English',
+    es: 'Spanish',
+    fr: 'French',
+    de: 'German',
+    it: 'Italian',
+  }
+  return names[tag] ?? tag
+}
+
+function reportFailure(error: unknown, settings: Settings): void {
+  const log = getLog()
+  log.error(error instanceof Error ? error : String(error))
+
+  if (error instanceof ProviderError) {
+    const actions: string[] = ['Show Log', 'Open Settings']
+    void vscode.window
+      .showErrorMessage(providerMessage(error, settings), ...actions)
+      .then(choice => {
+        if (choice === 'Show Log') {
+          log.show(true)
+        } else if (choice === 'Open Settings') {
+          void vscode.commands.executeCommand('workbench.action.openSettings', 'aiCommitMessages')
+        }
+      })
+    return
+  }
+
+  if (error instanceof PipelineError) {
+    log.error(`raw model reply: ${error.raw}`)
+    void vscode.window.showErrorMessage(`${error.message} See the log for the raw reply.`, 'Show Log').then(choice => {
+      if (choice === 'Show Log') {
+        log.show(true)
+      }
+    })
+    return
+  }
+
+  void vscode.window.showErrorMessage('Generating the commit message failed. See the log.', 'Show Log').then(choice => {
+    if (choice === 'Show Log') {
+      log.show(true)
+    }
+  })
+}
+
+function providerMessage(error: ProviderError, settings: Settings): string {
+  switch (error.code) {
+    case 'model-not-found':
+      return `The model "${settings.model}" is not installed on ${settings.endpoint}.`
+    case 'network':
+      return error.message
+    case 'malformed-response':
+      return `${settings.endpoint} answered with something unexpected. ${error.message}`
+    default:
+      return `The model backend refused the request: ${error.message}`
+  }
 }
