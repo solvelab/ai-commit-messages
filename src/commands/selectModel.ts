@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { currentSettings } from '../config.js'
 import { hostOf } from '../endpoint.js'
 import { getLog } from '../log.js'
-import { CONFIG_SECTION } from '../meta.js'
 import { knownModels } from '../models/catalog.js'
 import {
   cacheKey,
@@ -15,6 +14,7 @@ import { withAbort } from '../net.js'
 import { createProvider } from '../providers/registry.js'
 import type { FetchLike, ModelInfo } from '../providers/types.js'
 import { readToken } from './secrets.js'
+import { reportWriteFailure, writeSetting } from './writeSetting.js'
 
 const TYPE_MANUALLY = '$(edit) Type the model name…'
 const REFRESH = '$(refresh) Reload from the server'
@@ -86,11 +86,15 @@ export async function selectModel(): Promise<void> {
     return
   }
 
-  await vscode.workspace
-    .getConfiguration(CONFIG_SECTION)
-    .update('model', model.trim(), vscode.ConfigurationTarget.Global)
-  log.info(`model set to ${model.trim()} (${settings.backend.label})`)
-  void vscode.window.showInformationMessage(`Model set to ${model.trim()}.`)
+  // Read back before announcing anything: this command used to report a model it had not managed
+  // to set, because another scope was winning.
+  const written = await writeSetting('model', model.trim())
+  if (!written.ok) {
+    await reportWriteFailure('model', model.trim(), written)
+    return
+  }
+  log.info(`model set to ${written.effective} (${settings.backend.label})`)
+  void vscode.window.showInformationMessage(`Model set to ${written.effective}.`)
 }
 
 /** Reads the list from the server, returning `undefined` on any failure — the cache covers it. */

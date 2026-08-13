@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { describePlan, LEGACY_SECTION, planMigration, type LegacyValues } from '../migrate.js'
+import { reportWriteFailure, writeSetting } from './writeSetting.js'
 
 /** Set once the offer has been made, so the user is not asked again. */
 const OFFERED_KEY = 'migration.ollamaCommit.offered'
@@ -63,10 +64,13 @@ export async function migrateLegacySettings(explicit: boolean): Promise<void> {
     return
   }
 
-  const own = vscode.workspace.getConfiguration(CONFIG_SECTION)
   for (const entry of plan.entries) {
     const key = entry.to.slice(`${CONFIG_SECTION}.`.length)
-    await own.update(key, entry.value, vscode.ConfigurationTarget.Global)
+    const written = await writeSetting(key, entry.value)
+    if (!written.ok) {
+      await reportWriteFailure(key, entry.value, written)
+      return
+    }
     log.info(`migrated ${entry.from} → ${entry.to}`)
   }
 

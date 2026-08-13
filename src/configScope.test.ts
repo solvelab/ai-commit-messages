@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasCustomValue, scopeOfCustomValue, targetForWrite } from './configScope.js'
+import { diagnoseShadow, hasCustomValue, scopeOfCustomValue, targetForWrite } from './configScope.js'
 
 describe('scopeOfCustomValue', () => {
   it('prefers the narrowest scope, which is also the one that wins at read time', () => {
@@ -49,5 +49,28 @@ describe('hasCustomValue', () => {
 
   it('is false for the untouched default', () => {
     expect(hasCustomValue({ globalValue: '' })).toBe(false)
+  })
+})
+
+describe('diagnoseShadow', () => {
+  it('names the folder value, which beats everything', () => {
+    expect(
+      diagnoseShadow({ workspaceFolderValue: 'old', workspaceValue: 'old', globalValue: 'new' }, 'new'),
+    ).toBe('workspaceFolder')
+  })
+
+  it('names the workspace value', () => {
+    expect(diagnoseShadow({ workspaceValue: 'old', globalValue: 'new' }, 'new')).toBe('workspace')
+  })
+
+  // The API cannot see the remote user file separately, so a surviving user value is the tell.
+  it('names the user scope when the merged user value is still the old one', () => {
+    expect(diagnoseShadow({ globalValue: 'old' }, 'new')).toBe('user')
+  })
+
+  it('finds nothing to blame once the value took effect', () => {
+    expect(diagnoseShadow({ globalValue: 'new' }, 'new')).toBe('none')
+    expect(diagnoseShadow({ workspaceValue: 'new', globalValue: 'new' }, 'new')).toBe('none')
+    expect(diagnoseShadow(undefined, 'new')).toBe('none')
   })
 })
