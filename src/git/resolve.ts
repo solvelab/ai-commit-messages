@@ -129,9 +129,11 @@ export async function resolveRepository<R extends RepositoryLike>(
     }
   }
 
-  // 5. Unambiguous single repository.
+  // 5. Unambiguous single repository. Destructured rather than indexed so that no reading of this
+  // file can mistake it for the blind `repositories[0]` this cascade exists to avoid.
   if (host.repositories.length === 1) {
-    return { repository: host.repositories[0], source: 'only-repository' }
+    const [only] = host.repositories
+    return { repository: only, source: 'only-repository' }
   }
 
   // 6. Ambiguous: ask instead of guessing.
