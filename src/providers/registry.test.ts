@@ -6,7 +6,8 @@ import { createProvider, isImplemented, knownProviders } from './registry.js'
 import { OllamaProvider } from './ollama.js'
 import { OpenAICompatProvider } from './openaiCompat.js'
 import { ProviderError, type FetchLike } from './types.js'
-import { PROVIDERS, type ProviderId } from '../settings.js'
+import { ADAPTERS } from '../settings.js'
+import { BACKENDS, findBackend } from './catalog.js'
 
 const fetchImpl: FetchLike = async () => ({
   ok: true,
@@ -39,7 +40,7 @@ describe('createProvider', () => {
     expect(provider.preset.id).toBe('groq')
   })
 
-  it.each(PROVIDERS)('handles %s — either builds it or refuses it, never the wrong one', id => {
+  it.each([...ADAPTERS])('handles %s — either builds it or refuses it, never the wrong one', id => {
     if (isImplemented(id)) {
       expect(createProvider(id, context).id).toBe(id)
     } else {
@@ -53,7 +54,7 @@ describe('createProvider', () => {
   })
 })
 
-describe('the manifest and the code agree on the provider list', () => {
+describe('the manifest and the catalog agree on the backend list', () => {
   const manifest = JSON.parse(
     readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'),
   ) as { contributes: { configuration: { properties: Record<string, { enum?: string[] }> }[] } }
@@ -62,14 +63,28 @@ describe('the manifest and the code agree on the provider list', () => {
     .flatMap(node => Object.entries(node.properties))
     .find(([key]) => key === 'aiCommitMessages.provider')?.[1].enum
 
-  it('offers exactly the providers the code knows about', () => {
+  it('offers exactly the backends the catalog knows about', () => {
     // Drift here is how an option gets offered that nothing implements.
-    expect(declared?.slice().sort()).toEqual([...knownProviders()].sort())
+    expect(declared?.slice().sort()).toEqual(BACKENDS.map(b => b.id).sort())
   })
 
-  it('every declared provider has a dispatch branch', () => {
+  it('every declared backend resolves to an adapter the registry can build', () => {
     for (const id of declared ?? []) {
-      expect(() => createProvider(id as ProviderId, context)).not.toThrow(/Unknown provider/)
+      const backend = findBackend(id)
+      expect(backend, id).toBeDefined()
+      expect(() => createProvider(backend!.adapter, { ...context, endpoint: 'http://h/v1' })).not.toThrow()
     }
+  })
+
+  it('no backend advertises an adapter that does not exist', () => {
+    for (const backend of BACKENDS) {
+      expect(knownProviders()).toContain(backend.adapter)
+    }
+  })
+
+  it('`compatPreset` is gone from the settings surface', () => {
+    const keys = manifest.contributes.configuration.flatMap(n => Object.keys(n.properties))
+    // Two lists for one decision was the whole problem.
+    expect(keys).not.toContain('aiCommitMessages.compatPreset')
   })
 })

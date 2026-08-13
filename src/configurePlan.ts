@@ -1,4 +1,5 @@
-import { normalizeBaseUrl, PROVIDERS, type ProviderId } from './settings.js'
+import { findBackend } from './providers/catalog.js'
+import { normalizeBaseUrl, type ProviderId } from './settings.js'
 
 /**
  * What the guided setup writes, and where.
@@ -11,7 +12,8 @@ import { normalizeBaseUrl, PROVIDERS, type ProviderId } from './settings.js'
 export type WriteTarget = 'global' | 'workspace'
 
 export interface ConfigureAnswers {
-  readonly provider?: ProviderId
+  /** Backend id from the catalog, e.g. `groq`. */
+  readonly provider?: string
   readonly endpoint?: string
   readonly model?: string
 }
@@ -33,15 +35,16 @@ export function planConfiguration(answers: ConfigureAnswers): ConfigureWrite[] {
   const writes: ConfigureWrite[] = []
 
   if (answers.provider) {
-    if (!(PROVIDERS as readonly string[]).includes(answers.provider)) {
-      throw new ConfigureError(`Unknown provider "${answers.provider}".`)
+    if (!findBackend(answers.provider)) {
+      throw new ConfigureError(`Unknown backend "${answers.provider}".`)
     }
     writes.push({ key: 'provider', value: answers.provider, target: 'global' })
   }
 
   if (answers.endpoint !== undefined) {
     // Same rule the runtime will use, so the preview and the stored value agree.
-    const base = normalizeBaseUrl(answers.endpoint, answers.provider ?? 'ollama')
+    const adapter: ProviderId = findBackend(answers.provider ?? '')?.adapter ?? 'ollama'
+    const base = normalizeBaseUrl(answers.endpoint, adapter)
     if (!base) {
       throw new ConfigureError(`"${answers.endpoint}" is not a valid URL.`)
     }

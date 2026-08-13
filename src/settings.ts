@@ -13,10 +13,19 @@ import { DEFAULT_TIMEOUT_MS } from './net.js'
  * fatal irony. Keys belong in `SecretStorage`.
  */
 
-export const PROVIDERS = ['ollama', 'openai-compat'] as const
-export type ProviderId = (typeof PROVIDERS)[number]
+import { BACKENDS, DEFAULT_BACKEND_ID, resolveBackend, type AdapterId, type Backend } from './providers/catalog.js'
+
+/** Adapter ids, kept for the layers that speak to a server. Users never choose one directly. */
+export const ADAPTERS = ['ollama', 'openai-compat'] as const
+export type ProviderId = AdapterId
+
+/** What the user picks: one list, by product name. */
+export const BACKEND_IDS = BACKENDS.map(b => b.id)
 
 export interface Settings {
+  /** Backend chosen by the user, e.g. `groq`. */
+  readonly backend: Backend
+  /** Adapter derived from the backend. Never configured directly. */
   readonly provider: ProviderId
   /** Base URL. Never a full endpoint. */
   readonly endpoint: string
@@ -42,6 +51,7 @@ export interface Settings {
 }
 
 export const DEFAULTS: Settings = {
+  backend: resolveBackend(DEFAULT_BACKEND_ID),
   provider: 'ollama',
   endpoint: 'http://127.0.0.1:11434',
   model: 'qwen2.5-coder:7b',
@@ -178,22 +188,24 @@ function str(raw: unknown, fallback: string): string {
 export function readSettings(raw: Record<string, unknown>): ReadResult {
   const problems: SettingsProblem[] = []
 
-  const providerRaw = str(raw.provider, DEFAULTS.provider)
-  const provider = (PROVIDERS as readonly string[]).includes(providerRaw)
-    ? (providerRaw as ProviderId)
-    : DEFAULTS.provider
-  if (provider !== providerRaw) {
-    problems.push({ key: 'provider', message: `Unknown provider "${providerRaw}"; using ${DEFAULTS.provider}.` })
+  const providerRaw = str(raw.provider, DEFAULT_BACKEND_ID)
+  // `compatPreset` is no longer offered, but is still read: a configuration written by an earlier
+  // version keeps working without anyone touching their settings.
+  const backend = resolveBackend(providerRaw, str(raw.compatPreset, ''))
+  if (backend.id !== providerRaw && providerRaw !== 'openai-compat') {
+    problems.push({ key: 'provider', message: `Unknown backend "${providerRaw}"; using ${backend.label}.` })
   }
+  const provider = backend.adapter
 
   // Provider-aware: the endpoint is normalized for the dialect that will actually be spoken.
-  const endpoint = normalizeBaseUrl(str(raw.endpoint, DEFAULTS.endpoint), provider)
+  const endpoint = normalizeBaseUrl(str(raw.endpoint, backend.defaultEndpoint || DEFAULTS.endpoint), provider)
   if (!endpoint) {
     problems.push({ key: 'endpoint', message: 'The endpoint is not a valid URL; using the default.' })
   }
 
   return {
     settings: {
+      backend,
       provider,
       endpoint: endpoint ?? DEFAULTS.endpoint,
       model: str(raw.model, DEFAULTS.model),
@@ -207,7 +219,7 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       // Empty is meaningful here (raw token), so `str` with its blank-to-default rule is wrong.
       authScheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULTS.authScheme,
       headers: readHeaders(raw.headers, problems),
-      compatPreset: str(raw.compatPreset, DEFAULTS.compatPreset),
+      compatPreset: backend.presetId ?? DEFAULTS.compatPreset,
       redactSecrets: typeof raw.redactSecrets === 'boolean' ? raw.redactSecrets : DEFAULTS.redactSecrets,
       excludeGlobs: readGlobs(raw.excludeGlobs, problems),
     },
