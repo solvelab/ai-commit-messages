@@ -23,7 +23,10 @@ const REASONING_LINE =
   /^\s*(?:the user\b|they are\b|the question\b|i can\b|i need\b|i should\b|i will\b|i'?m going\b|let me\b|thinking\s*:|looking at\b|based on\b|first,?\s|okay[,.]?\s|alright[,.]?\s|hmm[,.]?\s|so,?\s+(?:the|i|let|this)|o usuário\b|preciso\b|vou\b|deixa eu\b|analisando\b|olhando\b|primeiro,?\s|então,?\s+(?:o|a|eu|vou))/i
 
 /** A line that is plainly the commit title. Its presence means the reply reached the answer. */
-const COMMIT_LINE = /^[\p{Extended_Pictographic}‍️\s]*(?:\w+)(?:\([^)]+\))?:\s+\S/u
+// Anything before the type is decoration (emoji, ZWJ, variation selectors, spaces). Matching
+// "not a letter" avoids putting combining characters in a class, which is both fragile and
+// flagged by `no-misleading-character-class`.
+const COMMIT_LINE = /^[^\p{L}]*\w+(?:\([^)]+\))?:\s+\S/u
 
 export interface SanitizeResult {
   readonly text: string
