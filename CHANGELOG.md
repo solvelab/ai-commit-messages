@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/solvelab/ai-commit-messages/compare/v1.8.0...v1.9.0) (2026-08-13)
+
+
+### Features
+
+* **connection:** dar lugar próprio ao endpoint e avisar quando falta a chave ([#70](https://github.com/solvelab/ai-commit-messages/issues/70)) ([5ea2c2b](https://github.com/solvelab/ai-commit-messages/commit/5ea2c2b3408a580e2d7b280bfd658fa1f241afca)), closes [#69](https://github.com/solvelab/ai-commit-messages/issues/69)
+
 # [1.8.0](https://github.com/solvelab/ai-commit-messages/compare/v1.7.2...v1.8.0) (2026-08-13)
 
 
