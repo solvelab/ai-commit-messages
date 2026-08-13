@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
 import { getLog } from '../log.js'
-import { CONFIG_SECTION } from '../meta.js'
 import { validateEndpointInput } from '../configurePlan.js'
+import { reportWriteFailure, writeSetting } from './writeSetting.js'
 
 /**
  * Edits the endpoint from anywhere, including the tab where it is not shown.
@@ -31,12 +31,15 @@ export async function setEndpoint(): Promise<void> {
     return
   }
 
-  // Global, always: under a remote session VS Code resolves this to the remote settings file, which
-  // is where a per-machine endpoint belongs.
-  await vscode.workspace
-    .getConfiguration(CONFIG_SECTION)
-    .update('endpoint', value.trim(), vscode.ConfigurationTarget.Global)
+  // Machine-scoped, so under a remote session this lands in the remote settings file — where a
+  // per-machine endpoint belongs. The write is read back before anything is announced.
+  const written = await writeSetting('endpoint', value.trim())
+  if (!written.ok) {
+    await reportWriteFailure('endpoint', value.trim(), written)
+    return
+  }
 
+  // What the settings file holds is the raw URL; what the extension talks to is the normalized one.
   const stored = currentSettings().settings.endpoint
   getLog().info(`endpoint set to ${stored}`)
   void vscode.window.showInformationMessage(`Endpoint set to ${stored}.`)

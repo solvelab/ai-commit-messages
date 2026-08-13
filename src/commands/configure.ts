@@ -9,9 +9,9 @@ import {
 } from '../configurePlan.js'
 import { getLog } from '../log.js'
 import { withAbort } from '../net.js'
-import { CONFIG_SECTION } from '../meta.js'
 import { createProvider } from '../providers/registry.js'
 import { readToken, setToken } from './secrets.js'
+import { reportWriteFailure, writeSetting } from './writeSetting.js'
 import { warmModelCache } from './selectModel.js'
 import { ProviderError, type FetchLike } from '../providers/types.js'
 import { BACKENDS, type Backend } from '../providers/catalog.js'
@@ -75,12 +75,13 @@ export async function configure(): Promise<void> {
   const answers: ConfigureAnswers = { provider: backend.id, endpoint, model }
 
   try {
-    const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
     for (const write of planConfiguration(answers)) {
-      // Always Global: `endpoint` is machine-scoped, and under a remote session VS Code resolves
-      // this to the remote settings file — where a per-machine endpoint belongs.
-      await configuration.update(write.key, write.value, vscode.ConfigurationTarget.Global)
-      log.info(`configured ${write.key} = ${write.value}`)
+      const written = await writeSetting(write.key, write.value)
+      if (!written.ok) {
+        await reportWriteFailure(write.key, write.value, written)
+        return
+      }
+      log.info(`configured ${write.key} = ${written.effective}`)
     }
   } catch (error) {
     log.error(error instanceof Error ? error : String(error))

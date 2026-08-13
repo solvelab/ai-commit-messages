@@ -5,13 +5,8 @@ import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { buildSystemPrompt } from '../prompt/template.js'
 import { languageName } from '../prompt/languages.js'
-import { hasCustomValue, targetForWrite, type ConfigScope } from '../configScope.js'
-
-const TARGETS: Record<ConfigScope, vscode.ConfigurationTarget> = {
-  global: vscode.ConfigurationTarget.Global,
-  workspace: vscode.ConfigurationTarget.Workspace,
-  workspaceFolder: vscode.ConfigurationTarget.WorkspaceFolder,
-}
+import { hasCustomValue } from '../configScope.js'
+import { reportWriteFailure, writeSetting } from './writeSetting.js'
 
 /**
  * Materializes the built-in prompt into the setting.
@@ -48,9 +43,12 @@ export async function insertDefaultPrompt(): Promise<void> {
 
   // Writing globally while a workspace value exists is a write nobody observes: the workspace one
   // keeps winning, and the command reports a success the user cannot see.
-  const scope = targetForWrite(existing)
-  await configuration.update('promptTemplate', prompt, TARGETS[scope])
-  log.info(`inserted the built-in ${settings.language} prompt into promptTemplate (${scope})`)
+  const written = await writeSetting('promptTemplate', prompt)
+  if (!written.ok) {
+    await reportWriteFailure('promptTemplate', prompt, written)
+    return
+  }
+  log.info(`inserted the built-in ${settings.language} prompt into promptTemplate`)
 
   await vscode.commands.executeCommand(
     'workbench.action.openSettings',

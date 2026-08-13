@@ -56,3 +56,28 @@ function isSet(value: unknown): boolean {
   }
   return typeof value === 'string' ? value.trim().length > 0 : true
 }
+
+/** What is winning over the value we wrote, when the write did not take effect. */
+export type Shadow = 'workspaceFolder' | 'workspace' | 'user' | 'none'
+
+/**
+ * Names what beat the value we just wrote, from what the extension API can actually see.
+ *
+ * The API cannot tell the local user file from the remote one: `globalValue` is already the merge
+ * of both, with remote winning (`configurationModels.ts:962-968`, `extHostConfiguration.ts:275`).
+ * So a value that survived a global write while no workspace value exists is, by elimination, a
+ * duplicate in the other user file — which is exactly what a scope change from `machine-overridable`
+ * to `window` leaves behind.
+ */
+export function diagnoseShadow<T>(inspected: InspectedValue<T> | undefined, wanted: T): Shadow {
+  if (inspected?.workspaceFolderValue !== undefined && inspected.workspaceFolderValue !== wanted) {
+    return 'workspaceFolder'
+  }
+  if (inspected?.workspaceValue !== undefined && inspected.workspaceValue !== wanted) {
+    return 'workspace'
+  }
+  if (inspected?.globalValue !== undefined && inspected.globalValue !== wanted) {
+    return 'user'
+  }
+  return 'none'
+}
