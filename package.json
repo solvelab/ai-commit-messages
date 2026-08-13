@@ -70,6 +70,12 @@
         "icon": "$(sparkle)"
       },
       {
+        "command": "aiCommitMessages.configure",
+        "title": "Configure…",
+        "category": "AI Commit Messages",
+        "icon": "$(gear)"
+      },
+      {
         "command": "aiCommitMessages.migrateSettings",
         "title": "Import settings from the Ollama Commit extension",
         "category": "AI Commit Messages"
@@ -81,6 +87,11 @@
           "command": "aiCommitMessages.generate",
           "when": "scmProvider == git",
           "group": "navigation"
+        },
+        {
+          "command": "aiCommitMessages.configure",
+          "when": "scmProvider == git",
+          "group": "navigation@99"
         }
       ]
     },
@@ -106,26 +117,50 @@
             "Ollama's native API (/api/chat).",
             "Any OpenAI-compatible endpoint (/v1/chat/completions)."
           ],
-          "scope": "machine-overridable",
+          "scope": "window",
           "markdownDescription": "Backend to generate with."
         },
         "aiCommitMessages.endpoint": {
           "type": "string",
           "default": "http://127.0.0.1:11434",
           "scope": "machine",
-          "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint. Machine-scoped on purpose: it must differ between local and remote, it is not synced, and a cloned repository must not be able to redirect your staged diff. Set it per-remote in the **Remote** tab."
+          "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…** from the Command Palette."
         },
         "aiCommitMessages.model": {
           "type": "string",
           "default": "qwen2.5-coder:7b",
-          "scope": "machine-overridable",
+          "scope": "window",
           "markdownDescription": "Model to generate with. Must exist on the server."
         },
         "aiCommitMessages.language": {
           "type": "string",
           "default": "pt-BR",
           "scope": "window",
-          "markdownDescription": "Language of the generated message, as a tag like `pt-BR` or `en`."
+          "enum": [
+            "pt-BR",
+            "en",
+            "es",
+            "fr",
+            "de",
+            "it"
+          ],
+          "enumItemLabels": [
+            "Português (Brasil)",
+            "English",
+            "Español",
+            "Français",
+            "Deutsch",
+            "Italiano"
+          ],
+          "enumDescriptions": [
+            "Mensagens em português brasileiro.",
+            "Messages in English.",
+            "Mensajes en español.",
+            "Messages en français.",
+            "Nachrichten auf Deutsch.",
+            "Messaggi in italiano."
+          ],
+          "markdownDescription": "Language of the generated commit message."
         },
         "aiCommitMessages.promptTemplate": {
           "type": "string",
@@ -155,7 +190,7 @@
           "default": 0,
           "minimum": 0,
           "maximum": 1,
-          "scope": "machine-overridable",
+          "scope": "window",
           "markdownDescription": "Sampling temperature. `0` is the right default for structured output."
         },
         "aiCommitMessages.timeoutMs": {
@@ -163,7 +198,7 @@
           "default": 60000,
           "minimum": 1000,
           "maximum": 600000,
-          "scope": "machine-overridable",
+          "scope": "window",
           "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s."
         }
       }

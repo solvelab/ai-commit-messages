@@ -174,11 +174,14 @@ function reportFailure(error: unknown, settings: Settings): void {
   log.error(error instanceof Error ? error : String(error))
 
   if (error instanceof ProviderError) {
-    const actions: string[] = ['Show Log', 'Open Settings']
+    // `Configure…` comes first: with a remote session the endpoint setting is not in the User tab,
+    // so pointing at plain settings is the least useful thing to offer.
     void vscode.window
-      .showErrorMessage(providerMessage(error, settings), ...actions)
+      .showErrorMessage(providerMessage(error, settings), 'Configure…', 'Show Log', 'Open Settings')
       .then(choice => {
-        if (choice === 'Show Log') {
+        if (choice === 'Configure…') {
+          void vscode.commands.executeCommand('aiCommitMessages.configure')
+        } else if (choice === 'Show Log') {
           log.show(true)
         } else if (choice === 'Open Settings') {
           void vscode.commands.executeCommand('workbench.action.openSettings', 'aiCommitMessages')
