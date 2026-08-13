@@ -123,8 +123,15 @@ export function validateCommitMessage(
     problems.push({ code: 'markdown', message: 'The message must not contain code fences.', line: 0 })
   }
 
-  const lowered = text.toLowerCase()
-  if (DEGENERATE.some(phrase => lowered.includes(phrase))) {
+  // Equality against the description, not substring: a correct message *about* empty commits —
+  // `fix(git): rejeitar empty commit quando nada está staged` — contains the phrase and is not
+  // degenerate. Only a reply that says nothing else is.
+  const description = titleRest
+    .replace(new RegExp(`^(?:${COMMIT_TYPES.join('|')})(?:\\([^)]+\\))?:\\s*`), '')
+    .trim()
+    .toLowerCase()
+  const whole = text.toLowerCase().trim()
+  if (DEGENERATE.some(phrase => description === phrase || whole === phrase)) {
     problems.push({
       code: 'degenerate',
       message: 'The reply claims there are no changes, but a diff was sent.',

@@ -58,13 +58,35 @@ export class PipelineError extends Error {
 /** Pulls the JSON object out of a reply that may carry prose or a fence around it. */
 export function extractJson(raw: string): unknown {
   const fenced = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(raw)
-  const candidate = fenced ? fenced[1] : raw
-
-  const start = candidate.indexOf('{')
-  if (start === -1) {
-    return undefined
+  // A fence is a hint, not a guarantee: if its contents do not parse, the raw text still might.
+  for (const candidate of fenced ? [fenced[1], raw] : [raw]) {
+    const found = scanForObject(candidate)
+    if (found !== undefined) {
+      return found
+    }
   }
+  return undefined
+}
 
+/**
+ * Scans for the first balanced object that parses.
+ *
+ * Restarts at the next `{` when a candidate fails, instead of giving up: a reply with a code
+ * snippet before the JSON (`adds { timeout: 30 } to the config`) used to force a retry.
+ */
+function scanForObject(candidate: string): unknown {
+  let start = candidate.indexOf('{')
+  while (start !== -1) {
+    const parsed = parseFrom(candidate, start)
+    if (parsed !== undefined) {
+      return parsed
+    }
+    start = candidate.indexOf('{', start + 1)
+  }
+  return undefined
+}
+
+function parseFrom(candidate: string, start: number): unknown {
   let depth = 0
   let inString = false
   let escaped = false
@@ -101,7 +123,20 @@ export function extractJson(raw: string): unknown {
   return undefined
 }
 
+/**
+ * Parse first, heuristics second.
+ *
+ * The sanitizer works on prose, and the payload is JSON. Running it first meant a reply whose
+ * *content* mentions `<think>` — a commit about suppressing the reasoning trace, for instance —
+ * had legitimate text stripped, or was rejected outright as a truncated stream. Trying the parse
+ * on the raw text first makes the heuristics what they were meant to be: a fallback for when the
+ * model answered with prose instead of JSON.
+ */
 function toDraft(result: GenerateResult, sanitize?: (raw: string) => string): CommitDraft | undefined {
+  const direct = parseDraft(extractJson(result.text))
+  if (direct) {
+    return direct
+  }
   const text = sanitize ? sanitize(result.text) : result.text
   return parseDraft(extractJson(text))
 }

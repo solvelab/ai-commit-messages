@@ -229,3 +229,27 @@ describe('splitByWordBudget', () => {
     expect(splitByWordBudget([entry], 5).kept).toEqual([entry])
   })
 })
+
+describe('degenerado por igualdade, não por substring', () => {
+  it('aceita uma mensagem legítima que fala sobre empty commit', () => {
+    // O modelo descrevendo corretamente uma mudança que trata commits vazios.
+    const message = '🐛 fix(git): rejeitar empty commit quando nada está staged'
+    expect(validateCommitMessage(message).ok).toBe(true)
+  })
+
+  it('aceita uma mensagem sobre no changes', () => {
+    expect(validateCommitMessage('♻️ refactor: tratar no changes sem lançar erro').ok).toBe(true)
+  })
+
+  it('ainda rejeita a resposta que não descreve nada', () => {
+    expect(
+      validateCommitMessage('🧹 chore: empty commit').problems.map(p => p.code),
+    ).toContain('degenerate')
+  })
+
+  it('ainda rejeita quando a mensagem inteira é a frase degenerada', () => {
+    expect(
+      validateCommitMessage('🧹 chore: nothing to commit').problems.map(p => p.code),
+    ).toContain('degenerate')
+  })
+})
