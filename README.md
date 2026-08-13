@@ -46,6 +46,7 @@ funciona de verdade** — nada aqui é promessa.
 | Redação de segredos no diff | ✅ #36 |
 | Exclusão de arquivos gerados do orçamento | ✅ #37 |
 | Comando de diagnóstico de conexão | ✅ #38 |
+| Revisão adversarial e as 14 correções que ela achou | ✅ #43–#49 |
 | Publicação em Marketplace e Open VSX | ⏳ precisa dos publishers |
 
 Medido em `qwen2.5-coder:7b` contra um Ollama na LAN, sobre 5 commits reais deste workspace:
