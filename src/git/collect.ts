@@ -16,6 +16,14 @@ export interface FileChange {
   /** Path used to ask git for this file's patch. */
   readonly path: string
   readonly status: number
+  /**
+   * Previous path, when git reported a rename or a copy.
+   *
+   * Load-bearing: git applies a pathspec **before** rename detection, so `git diff --cached -- <new>`
+   * describes a brand-new file and the old name disappears. Without this field the pipeline has no
+   * way to know a rename happened at all.
+   */
+  readonly originalPath?: string
 }
 
 export interface FilePatch extends FileChange {
@@ -45,7 +53,7 @@ export interface CollectHost {
   diffIndexWithHEAD(path: string): Promise<string>
   /** `git diff -- <path>` */
   diffWithHEAD(path: string): Promise<string>
-  /** `git diff [--cached]` over the whole tree. */
+  /** `git diff [--cached]` over the whole tree — the only form that preserves rename detection. */
   diffAll(cached: boolean): Promise<string>
   /** Reads a file so an untracked patch can be synthesized. `undefined` when unreadable. */
   readFile(path: string): Promise<{ text: string; bytes: number } | undefined>
@@ -90,10 +98,39 @@ export function synthesizeUntrackedPatch(path: string, text: string): string {
   return [...header, ...added].join('\n')
 }
 
+/**
+ * Builds the header git omits when a rename is asked for by pathspec.
+ *
+ * Reproduced on a real repository: `git diff --cached` reports 91 bytes of
+ * `rename from/rename to`, while `git diff --cached -- <new>` reports the whole file as added.
+ * Prefixing the header restores the fact the model needs; the re-added body is truncated because
+ * it carries no information about the change.
+ */
+export function renameHeader(change: FileChange): string {
+  return [
+    `diff --git a/${change.originalPath} b/${change.path}`,
+    'similarity index 100%',
+    `rename from ${change.originalPath}`,
+    `rename to ${change.path}`,
+  ].join('\n')
+}
+
+/** Renamed and copied entries lose their old side when asked for by pathspec. */
+function isRenameLike(status: number): boolean {
+  return status === GitStatus.INDEX_RENAMED || status === GitStatus.INDEX_COPIED
+}
+
 async function patchFor(
   change: FileChange,
   host: CollectHost,
 ): Promise<{ patch: string; synthesized: boolean } | { skip: string }> {
+  if (isRenameLike(change.status) && change.originalPath) {
+    // The content is unchanged in a pure rename; what matters is the pair of names.
+    const body = await host.diffIndexWithHEAD(change.path)
+    const trimmed = body.length > 2000 ? `${body.slice(0, 2000)}\n... (renamed file body truncated)` : body
+    return { patch: `${renameHeader(change)}\n${trimmed}`, synthesized: true }
+  }
+
   if (isUntracked(change.status)) {
     const file = await host.readFile(change.path)
     if (!file) {

@@ -76,6 +76,25 @@ suite('collect (real repository)', () => {
     assert.equal(new Set(names).size, names.length, `duplicated entries in ${names.join(', ')}`)
   })
 
+  test('describes the rename as a rename, carrying the old name', async () => {
+    // The defect this covers: `git diff --cached -- <new>` reports the file as brand new, so the
+    // message came out as "add renamed-to.txt" instead of naming the rename.
+    const result = await collectChanges(createCollectHost(repository))
+    const renamed = result.files.find(f => f.path.endsWith('renamed-to.txt'))
+    assert.ok(renamed, `renamed file missing from ${result.files.map(f => f.path).join(', ')}`)
+    assert.match(renamed.patch, /rename from .*renamed-from\.txt/)
+    assert.match(renamed.patch, /rename to .*renamed-to\.txt/)
+  })
+
+  test('the old name reaches the prompt', async () => {
+    const result = await collectChanges(createCollectHost(repository))
+    const prompt = result.files.map(f => f.patch).join('\n')
+    assert.ok(
+      prompt.includes('renamed-from.txt'),
+      'the old name is nowhere in what would be sent to the model',
+    )
+  })
+
   test('falls back to the working tree when the index is empty', async function () {
     this.timeout(60_000)
     git('reset')
