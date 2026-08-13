@@ -41,7 +41,6 @@ export interface WriteResult<T> {
 }
 
 export async function writeSetting<T>(key: string, value: T): Promise<WriteResult<T>> {
-  const log = getLog()
   const inspected = vscode.workspace.getConfiguration(CONFIG_SECTION).inspect<T>(key)
 
   await update(key, value, TARGETS[targetForWrite(inspected)])
@@ -52,7 +51,7 @@ export async function writeSetting<T>(key: string, value: T): Promise<WriteResul
   // Only now, and only because a write that should have won did not: remove the key from every
   // target that defines it, then put it back once. This is what unmakes a key duplicated across the
   // local and remote user files.
-  log.info(`${key} did not take effect; removing it from every target and writing once`)
+  getLog().info(`${key} did not take effect; removing it from every target and writing once`)
   await update(key, undefined, vscode.ConfigurationTarget.Global)
   await update(key, value, vscode.ConfigurationTarget.Global)
   if (await took(key, value)) {
@@ -63,7 +62,7 @@ export async function writeSetting<T>(key: string, value: T): Promise<WriteResul
   const after = vscode.workspace.getConfiguration(CONFIG_SECTION).inspect<T>(key)
   const shadow = diagnoseShadow(after, value)
   const effective = vscode.workspace.getConfiguration(CONFIG_SECTION).get<T>(key)
-  log.warn(`${key} is still ${String(effective)}; ${shadow} scope wins`)
+  getLog().warn(`${key} is still ${String(effective)}; ${shadow} scope wins`)
   return { ok: false, effective, shadow, collapsed: true }
 }
 

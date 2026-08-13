@@ -3,7 +3,7 @@ import * as assert from 'node:assert/strict'
 import * as vscode from 'vscode'
 
 import { writeSetting } from '../../commands/writeSetting.js'
-import { CONFIG_SECTION } from '../../meta.js'
+import { CONFIG_SECTION, EXTENSION_ID } from '../../meta.js'
 
 /**
  * The bug this file exists for: `Select model…` announced a model it had not managed to set,
@@ -11,6 +11,13 @@ import { CONFIG_SECTION } from '../../meta.js'
  * lives in how VS Code resolves scopes, so it has to run against a real VS Code.
  */
 suite('writeSetting', () => {
+  suiteSetup(async () => {
+    // The scope resolution under test is the extension host's, so the extension has to be live.
+    const extension = vscode.extensions.getExtension(EXTENSION_ID)
+    assert.ok(extension, `extension ${EXTENSION_ID} not found in the test host`)
+    await extension.activate()
+  })
+
   teardown(async () => {
     const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
     await configuration.update('model', undefined, vscode.ConfigurationTarget.Global)
