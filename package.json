@@ -86,6 +86,11 @@
         "category": "AI Commit Messages"
       },
       {
+        "command": "aiCommitMessages.setEndpoint",
+        "title": "Set endpoint…",
+        "category": "AI Commit Messages"
+      },
+      {
         "command": "aiCommitMessages.setToken",
         "title": "Set API key…",
         "category": "AI Commit Messages"
@@ -167,7 +172,7 @@
               "Any other server speaking /v1/chat/completions."
             ],
             "scope": "window",
-            "markdownDescription": "Backend to generate with. The endpoint below is filled in for you when you pick one.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — the key is stored in the OS secret store, never in this file.",
+            "markdownDescription": "Backend to generate with. Picking one suggests its usual endpoint.\n\n▸ **[Configure connection…](command:aiCommitMessages.configure)** — backend, endpoint, API key and model, in one flow.\n\nOr one at a time: **[Set endpoint…](command:aiCommitMessages.setEndpoint)** · **[Set API key…](command:aiCommitMessages.setToken)** · **[Select model…](command:aiCommitMessages.selectModel)**\n\n_The endpoint is stored per machine, so in a remote session it is shown on the_ **Remote** _tab, not this one — the command above edits it from either. The API key is never in this file: it goes to the OS secret store._",
             "order": 1,
             "enumItemLabels": [
               "Ollama",
@@ -186,7 +191,7 @@
             "type": "string",
             "default": "http://127.0.0.1:11434",
             "scope": "machine",
-            "markdownDescription": "**Base URL** of the server — not a full endpoint. Leave the value your backend suggests unless your server lives elsewhere.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — the key is stored in the OS secret store, never in this file.\n\n_Machine-scoped: it must differ between local and remote, is never synced, and a cloned repository must not be able to redirect your staged diff. Because of that, in a remote session this setting lives in the_ **Remote** _tab._",
+            "markdownDescription": "**Base URL** of the server — not a full endpoint. A path such as `/api/generate` is trimmed.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — for a gateway or a hosted endpoint. The key is stored in the OS secret store, never in this file.\n\n_Machine-scoped: it must differ between local and remote, is never synced, and a cloned repository must not be able to redirect your staged diff — which is why it cannot be set in_ `.vscode/settings.json`.",
             "order": 2
           },
           "aiCommitMessages.model": {

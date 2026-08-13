@@ -7,7 +7,8 @@ import { cachedModelIds, initModelCache, selectModel } from './commands/selectMo
 import { currentSettings } from './config.js'
 import { insertDefaultPrompt } from './commands/insertPrompt.js'
 import { migrateLegacySettings, offerMigrationOnce } from './commands/migrate.js'
-import { clearToken, initSecrets, setToken } from './commands/secrets.js'
+import { clearToken, initSecrets, readToken, setToken } from './commands/secrets.js'
+import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog } from './log.js'
 import { hostOf } from './endpoint.js'
@@ -32,6 +33,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand(CONFIGURE_COMMAND, configure),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.diagnose`, diagnose),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.selectModel`, selectModel),
+    vscode.commands.registerCommand(`${CONFIG_SECTION}.setEndpoint`, setEndpoint),
     vscode.commands.registerCommand(INSERT_PROMPT_COMMAND, insertDefaultPrompt),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.setToken`, async () => {
       const { settings } = currentSettings()
@@ -48,6 +50,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Only the backend change matters: it is the moment a model stops existing.
       if (event.affectsConfiguration(`${CONFIG_SECTION}.provider`)) {
         void warnAboutLeftoverModel()
+        void warnAboutMissingKey()
       }
     }),
   )
@@ -102,6 +105,30 @@ async function warnAboutLeftoverModel(): Promise<void> {
   )
   if (choice === 'Select model…') {
     await selectModel()
+  }
+}
+
+/**
+ * Says something when the backend just chosen needs an API key and none is stored for that host.
+ *
+ * Without this the only signal is the generation failing later, with whatever the server chose to
+ * answer. Local Ollama never sees it: `requiresToken` is false there.
+ */
+async function warnAboutMissingKey(): Promise<void> {
+  const { settings } = currentSettings()
+  if (!settings.backend.requiresToken) {
+    return
+  }
+  if (await readToken(settings.provider, settings.endpoint)) {
+    return
+  }
+
+  const choice = await vscode.window.showWarningMessage(
+    `${settings.backend.label} needs an API key, and none is stored for ${hostOf(settings.endpoint)}.`,
+    'Set API key…',
+  )
+  if (choice === 'Set API key…') {
+    await setToken(settings.provider, settings.endpoint)
   }
 }
 
