@@ -123,24 +123,11 @@ suite('settings layout', () => {
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.setToken'))
       .map(([key]) => key)
-    // One per tab, not four: `provider` is the first thing on the User tab, and `endpoint` is the
-    // only setting visible on the Remote tab, where the key is bound to the host anyway. Repeating
-    // the same link on the header fields read as if they were different actions.
-    assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.endpoint'])
+    // One link, on the setting that opens the connection: repeating it read as different actions,
+    // and the endpoint is now a plain field that needs no link of its own.
+    assert.deepEqual(linked, ['aiCommitMessages.provider'])
   })
 
-  // `endpoint` is machine-scoped, so a remote session hides it from the User tab entirely. Without
-  // a command it was unreachable from the tab people are looking at, and the Provider description
-  // claimed it was "below" — which it was not.
-  test('reaches the endpoint from the tab that does not show it', () => {
-    const provider = configuration()
-      .flatMap(node => Object.entries(node.properties))
-      .find(([key]) => key === 'aiCommitMessages.provider')?.[1]
-    assert.ok(provider, 'aiCommitMessages.provider disappeared')
-    const description = provider.markdownDescription ?? ''
-    assert.ok(description.includes('command:aiCommitMessages.setEndpoint'))
-    assert.ok(!description.includes('endpoint below'))
-  })
 
   // Three names for one action: the link said "API key", the palette said "token", and the input
   // box said "token for <host>".
@@ -177,9 +164,8 @@ suite('settings layout', () => {
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.selectModel'))
       .map(([key]) => key)
-    // Two places, one role each: `provider` is the connection hub and lists every setup command;
-    // `model` is where someone already typing a model name looks.
-    assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.model'])
+    // Where someone typing a model name is already looking, and nowhere else.
+    assert.deepEqual(linked, ['aiCommitMessages.model'])
   })
 
   test('never offers a setting that would hold the credential', () => {
