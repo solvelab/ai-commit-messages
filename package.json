@@ -132,7 +132,7 @@
             "default": "ollama",
             "enumDescriptions": [
               "Ollama's native API (/api/chat). Supports num_ctx, structured output and think:false.",
-              "Any OpenAI-compatible endpoint (/v1/chat/completions). NOT AVAILABLE YET — see issue #31."
+              "Any OpenAI-compatible endpoint (/v1/chat/completions): OpenAI, Groq, OpenRouter, LM Studio, vLLM, llama.cpp."
             ],
             "scope": "window",
             "markdownDescription": "Backend to generate with.",
@@ -184,6 +184,35 @@
               "type": "string"
             },
             "markdownDescription": "Extra HTTP headers sent with every request. For **non-sensitive** values only — put credentials in the secret store."
+          },
+          "aiCommitMessages.compatPreset": {
+            "type": "string",
+            "default": "custom",
+            "scope": "window",
+            "order": 8,
+            "enum": [
+              "openai",
+              "groq",
+              "openrouter",
+              "lmstudio",
+              "vllm",
+              "llamacpp",
+              "ollama-v1",
+              "gemini",
+              "custom"
+            ],
+            "enumItemLabels": [
+              "OpenAI",
+              "Groq",
+              "OpenRouter",
+              "LM Studio (local)",
+              "vLLM (local)",
+              "llama.cpp server (local)",
+              "Ollama via its OpenAI shim",
+              "Google Gemini (OpenAI shim)",
+              "Custom endpoint"
+            ],
+            "markdownDescription": "Flavour of OpenAI-compatible endpoint. Only used when the provider is `openai-compat`. The preset fills in the base URL and works around each provider's quirks — Groq rejects fields OpenAI accepts, OpenAI deprecated `max_tokens`, OpenRouter wants attribution headers."
           }
         }
       },

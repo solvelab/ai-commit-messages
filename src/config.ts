@@ -20,6 +20,7 @@ export function currentSettings(scope?: vscode.Uri): ReadResult {
     'authHeader',
     'authScheme',
     'headers',
+    'compatPreset',
   ]) {
     raw[key] = configuration.get(key)
   }

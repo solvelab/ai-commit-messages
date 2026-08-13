@@ -32,6 +32,8 @@ export interface Settings {
   readonly authScheme: string
   /** Extra non-sensitive headers. */
   readonly headers: Record<string, string>
+  /** Which OpenAI-compatible flavour to speak. */
+  readonly compatPreset: string
 }
 
 export const DEFAULTS: Settings = {
@@ -48,6 +50,7 @@ export const DEFAULTS: Settings = {
   authHeader: 'Authorization',
   authScheme: 'Bearer',
   headers: {},
+  compatPreset: 'custom',
 }
 
 export interface SettingsProblem {
@@ -162,6 +165,7 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       // Empty is meaningful here (raw token), so `str` with its blank-to-default rule is wrong.
       authScheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULTS.authScheme,
       headers: readHeaders(raw.headers, problems),
+      compatPreset: str(raw.compatPreset, DEFAULTS.compatPreset),
     },
     problems,
   }

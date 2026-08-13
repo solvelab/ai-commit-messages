@@ -52,6 +52,8 @@ export type ProviderErrorCode =
   | 'malformed-response'
   | 'model-not-found'
   | 'unauthorized'
+  | 'rate-limited'
+  | 'unsupported-parameter'
   | 'structured-output-unsupported'
   | 'aborted'
 

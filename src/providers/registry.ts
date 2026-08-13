@@ -1,5 +1,6 @@
 import type { AuthConfig } from './auth.js'
 import { OllamaProvider } from './ollama.js'
+import { OpenAICompatProvider } from './openaiCompat.js'
 import { ProviderError, type CommitProvider, type FetchLike } from './types.js'
 import { PROVIDERS, type ProviderId } from '../settings.js'
 
@@ -21,10 +22,12 @@ export interface ProviderContext {
   /** Optional credential — a gateway in front of the server, or a hosted endpoint. */
   readonly token?: string
   readonly auth?: AuthConfig
+  /** Which OpenAI-compatible flavour to speak. Ignored by the native Ollama adapter. */
+  readonly presetId?: string
 }
 
 /** Backends that are actually implemented. Anything else in the enum is not yet available. */
-export const IMPLEMENTED_PROVIDERS: readonly ProviderId[] = ['ollama']
+export const IMPLEMENTED_PROVIDERS: readonly ProviderId[] = ['ollama', 'openai-compat']
 
 export function isImplemented(id: ProviderId): boolean {
   return IMPLEMENTED_PROVIDERS.includes(id)
@@ -41,10 +44,14 @@ export function createProvider(id: ProviderId, context: ProviderContext): Commit
         ...(context.auth ? { auth: context.auth } : {}),
       })
     case 'openai-compat':
-      throw new ProviderError(
-        'http',
-        'The OpenAI-compatible backend is not available yet. Switch the provider back to Ollama, or follow issue #31.',
-      )
+      return new OpenAICompatProvider({
+        endpoint: context.endpoint,
+        fetch: context.fetch,
+        ...(context.presetId ? { presetId: context.presetId } : {}),
+        ...(context.headers ? { headers: context.headers } : {}),
+        ...(context.token ? { token: context.token } : {}),
+        ...(context.auth ? { auth: context.auth } : {}),
+      })
     default:
       // Exhaustiveness: adding a value to the enum without handling it here fails to compile.
       return assertNever(id)
