@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/solvelab/ai-commit-messages/compare/v1.7.0...v1.7.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **settings:** devolver os cabeçalhos ao bloco Connection ([#64](https://github.com/solvelab/ai-commit-messages/issues/64)) ([20c5fe6](https://github.com/solvelab/ai-commit-messages/commit/20c5fe677aa39627144747dfbf6ea068557a7cc9)), closes [#63](https://github.com/solvelab/ai-commit-messages/issues/63)
+
 # [1.7.0](https://github.com/solvelab/ai-commit-messages/compare/v1.6.0...v1.7.0) (2026-08-13)
 
 
