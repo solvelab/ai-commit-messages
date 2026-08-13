@@ -12,6 +12,8 @@
  * Pure module: the caller gathers, this one reasons.
  */
 
+import { hostnameOf } from './endpoint.js'
+
 export interface DiagnosticFacts {
   readonly provider: string
   readonly endpoint: string
@@ -43,13 +45,7 @@ export interface DiagnosticReport {
   readonly lines: readonly Diagnostic[]
 }
 
-function hostOf(endpoint: string): string | undefined {
-  try {
-    return new URL(endpoint).hostname
-  } catch {
-    return undefined
-  }
-}
+
 
 function isLoopback(host: string | undefined): boolean {
   return host === 'localhost' || host === '127.0.0.1' || host === '::1'
@@ -80,7 +76,7 @@ export function looksLikeUnsupportedNoProxy(noProxy: readonly string[] | undefin
 
 export function buildReport(facts: DiagnosticFacts): DiagnosticReport {
   const lines: Diagnostic[] = []
-  const host = hostOf(facts.endpoint)
+  const host = hostnameOf(facts.endpoint)
 
   lines.push({
     severity: 'ok',
