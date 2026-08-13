@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/solvelab/ai-commit-messages/compare/v1.7.2...v1.8.0) (2026-08-13)
+
+
+### Features
+
+* **models:** abrir a lista de modelos da página de settings e avisar modelo de outro provider ([#68](https://github.com/solvelab/ai-commit-messages/issues/68)) ([e4db418](https://github.com/solvelab/ai-commit-messages/commit/e4db41898eee45fda7df9cf4c584310d6e4a510a)), closes [#67](https://github.com/solvelab/ai-commit-messages/issues/67)
+
 ## [1.7.2](https://github.com/solvelab/ai-commit-messages/compare/v1.7.1...v1.7.2) (2026-08-13)
 
 
