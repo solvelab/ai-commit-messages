@@ -79,6 +79,11 @@
         "command": "aiCommitMessages.migrateSettings",
         "title": "Import settings from the Ollama Commit extension",
         "category": "AI Commit Messages"
+      },
+      {
+        "command": "aiCommitMessages.insertDefaultPrompt",
+        "title": "Insert the default prompt into settings",
+        "category": "AI Commit Messages"
       }
     ],
     "menus": {
@@ -167,7 +172,7 @@
           "default": "",
           "editPresentation": "multilineText",
           "scope": "window",
-          "markdownDescription": "Replaces the built-in rules entirely. `{language}`, `{types}` and `{maxBodyWords}` are substituted. Leave empty to use the built-in prompt."
+          "markdownDescription": "Rules sent to the model. **Leave empty to use the built-in prompt for the language chosen above** (available in Portuguese and English).\n\nTo read or adapt it, run **AI Commit Messages: Insert the default prompt into settings** — it writes the resolved text here.\n\nSubstituted when present: `{language}`, `{languageTag}`, `{types}`, `{maxBodyWords}`."
         },
         "aiCommitMessages.maxDiffChars": {
           "type": "number",

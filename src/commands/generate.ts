@@ -11,6 +11,7 @@ import { withAbort } from '../net.js'
 import { OllamaProvider } from '../providers/ollama.js'
 import { ProviderError, type CommitProvider, type FetchLike } from '../providers/types.js'
 import { generateMessage, PipelineError } from '../prompt/pipeline.js'
+import { languageName } from '../prompt/languages.js'
 import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
 import { diffBudgetChars, type Settings } from '../settings.js'
@@ -153,20 +154,6 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
       log.info('commit message written to the input box')
     },
   )
-}
-
-function languageName(tag: string): string {
-  const names: Record<string, string> = {
-    'pt-BR': 'Brazilian Portuguese',
-    pt: 'Portuguese',
-    en: 'English',
-    'en-US': 'English',
-    es: 'Spanish',
-    fr: 'French',
-    de: 'German',
-    it: 'Italian',
-  }
-  return names[tag] ?? tag
 }
 
 function reportFailure(error: unknown, settings: Settings): void {

@@ -43,6 +43,7 @@ suite('activation', () => {
       GENERATE_COMMAND,
       'aiCommitMessages.configure',
       'aiCommitMessages.migrateSettings',
+      'aiCommitMessages.insertDefaultPrompt',
     ])
   })
 

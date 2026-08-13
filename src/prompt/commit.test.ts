@@ -159,13 +159,18 @@ describe('prompt', () => {
       expect(prompt).toContain(type)
     }
     expect(prompt).toContain('7')
+    // The built-in default language is pt-BR, so the rules themselves come in Portuguese.
     expect(prompt).toContain('Brazilian Portuguese')
-    expect(prompt).toContain('Do not emit one')
+    expect(prompt).toContain('Não emita nenhum')
   })
 
   it('lets a custom template replace the rules but keeps substitutions', () => {
     const prompt = buildSystemPrompt({ template: 'Escreva em {language}, até {maxBodyWords} palavras.' })
     expect(prompt).toBe('Escreva em Brazilian Portuguese, até 10 palavras.')
+  })
+
+  it('uses the Portuguese built-in prompt by default', () => {
+    expect(buildSystemPrompt()).toContain('Responda APENAS com JSON')
   })
 
   it('falls back to the default when the custom template is blank', () => {

@@ -1,4 +1,5 @@
 import { COMMIT_TYPES, DEFAULT_MAX_BODY_WORDS } from './commit.js'
+import { builtInPrompt } from './templates.js'
 
 /**
  * The prompt.
@@ -26,34 +27,11 @@ export interface SystemPromptOptions {
   readonly template?: string
 }
 
-export const DEFAULT_SYSTEM_TEMPLATE = `You generate git commit messages.
-
-Answer with JSON only. Never with prose, never with markdown, never with a code fence.
-
-Fields:
-- "type": one of {types}
-- "scope": optional, the module or area touched. Omit it when unclear.
-- "subject": imperative summary of the whole change. No emoji, no trailing period.
-- "body": array of strings. One performed action per entry, imperative, at most {maxBodyWords}
-  words each, no bullet characters, no trailing period. Empty array when the change is trivial.
-
-Rules:
-- Write "subject" and every "body" entry in {language}.
-- Present tense, imperative mood.
-- Group related changes; describe what the diff does, never what it might do.
-- Never invent a change that is not in the diff.
-- Count the words. A body entry with more than {maxBodyWords} words is rejected; split it into two
-  entries instead of writing a long one.
-
-The emoji is added by the caller. Do not emit one.
-
-Example of a well-formed reply:
-{"type":"feat","scope":"k8s","subject":"adicionar configuração inicial de namespaces","body":["criar namespace rogue","adicionar ClusterRole oke-ops-admin","vincular ClusterRole ao ServiceAccount"]}`
-
 export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
   const language = options.language ?? DEFAULT_LANGUAGE
   const maxBodyWords = options.maxBodyWords ?? DEFAULT_MAX_BODY_WORDS
-  const template = options.template?.trim() || DEFAULT_SYSTEM_TEMPLATE
+  // Empty means "use the built-in prompt for the chosen language".
+  const template = options.template?.trim() || builtInPrompt(language.tag)
 
   return template
     .replaceAll('{types}', COMMIT_TYPES.join(', '))
