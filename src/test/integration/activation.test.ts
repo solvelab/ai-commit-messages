@@ -39,7 +39,11 @@ suite('activation', () => {
     const contributed = (
       extension?.packageJSON.contributes?.commands as { command: string }[] | undefined
     )?.map(c => c.command)
-    assert.deepEqual(contributed, [GENERATE_COMMAND, 'aiCommitMessages.migrateSettings'])
+    assert.deepEqual(contributed, [
+      GENERATE_COMMAND,
+      'aiCommitMessages.configure',
+      'aiCommitMessages.migrateSettings',
+    ])
   })
 
   test('the SCM title menu entry targets git only', () => {
@@ -47,7 +51,7 @@ suite('activation', () => {
     const menu = extension?.packageJSON.contributes?.menus?.['scm/title'] as
       | { command: string; when: string; group: string }[]
       | undefined
-    assert.ok(menu && menu.length === 1, 'expected exactly one scm/title contribution')
+    assert.ok(menu && menu.length === 2, 'expected the generate and configure contributions')
     assert.equal(menu[0].command, GENERATE_COMMAND)
     assert.equal(menu[0].when, 'scmProvider == git')
     assert.equal(menu[0].group, 'navigation')
