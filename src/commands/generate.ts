@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
+import { runExclusive } from './inflight.js'
 import { collectChanges } from '../git/collect.js'
 import { getGitApi } from '../git/api.js'
 import { createCollectHost } from '../git/collectHost.js'
@@ -17,6 +18,7 @@ import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
 import { redactFiles } from '../redact.js'
 import { diffBudgetChars, usableContextTokens, type Settings } from '../settings.js'
+import type { Repository } from '../types/git.js'
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -41,6 +43,24 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
   for (const problem of problems) {
     log.warn(`configuration: ${problem.message}`)
   }
+
+  // Three surfaces can fire this command; two at once against the same repository produced two
+  // progress notifications and a race for the commit box.
+  const outcome = await runExclusive(repository.rootUri.toString(), () =>
+    generateForRepository(repository, settings),
+  )
+  if (!outcome.started) {
+    void vscode.window.showInformationMessage(
+      'A commit message is already being generated for this repository.',
+    )
+  }
+}
+
+async function generateForRepository(
+  repository: Repository,
+  settings: Settings,
+): Promise<void> {
+  const log = getLog()
 
   await vscode.window.withProgress(
     {

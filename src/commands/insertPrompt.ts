@@ -5,6 +5,13 @@ import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { buildSystemPrompt } from '../prompt/template.js'
 import { languageName } from '../prompt/languages.js'
+import { hasCustomValue, targetForWrite, type ConfigScope } from '../configScope.js'
+
+const TARGETS: Record<ConfigScope, vscode.ConfigurationTarget> = {
+  global: vscode.ConfigurationTarget.Global,
+  workspace: vscode.ConfigurationTarget.Workspace,
+  workspaceFolder: vscode.ConfigurationTarget.WorkspaceFolder,
+}
 
 /**
  * Materializes the built-in prompt into the setting.
@@ -24,11 +31,9 @@ export async function insertDefaultPrompt(): Promise<void> {
 
   const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
   const existing = configuration.inspect<string>('promptTemplate')
-  const hasCustom = Boolean(
-    existing?.globalValue?.trim() ??
-      existing?.workspaceValue?.trim() ??
-      existing?.workspaceFolderValue?.trim(),
-  )
+  // The `??` chain used here before treated an empty global value as "nothing set" and skipped the
+  // workspace one entirely.
+  const hasCustom = hasCustomValue(existing)
 
   if (hasCustom) {
     const choice = await vscode.window.showWarningMessage(
@@ -41,8 +46,11 @@ export async function insertDefaultPrompt(): Promise<void> {
     }
   }
 
-  await configuration.update('promptTemplate', prompt, vscode.ConfigurationTarget.Global)
-  log.info(`inserted the built-in ${settings.language} prompt into promptTemplate`)
+  // Writing globally while a workspace value exists is a write nobody observes: the workspace one
+  // keeps winning, and the command reports a success the user cannot see.
+  const scope = targetForWrite(existing)
+  await configuration.update('promptTemplate', prompt, TARGETS[scope])
+  log.info(`inserted the built-in ${settings.language} prompt into promptTemplate (${scope})`)
 
   await vscode.commands.executeCommand(
     'workbench.action.openSettings',
