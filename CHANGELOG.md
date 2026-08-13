@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/solvelab/ai-commit-messages/compare/v1.0.0...v1.1.0) (2026-08-13)
+
+
+### Features
+
+* **providers:** adapter OpenAI-compatible com presets por provider ([23c94ab](https://github.com/solvelab/ai-commit-messages/commit/23c94ab88c086039b55ec3856d93013348894604))
+
 # 1.0.0 (2026-08-13)
 
 
