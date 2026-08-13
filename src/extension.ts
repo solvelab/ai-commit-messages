@@ -29,11 +29,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand(INSERT_PROMPT_COMMAND, insertDefaultPrompt),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.setToken`, async () => {
       const { settings } = currentSettings()
-      await setToken(settings.provider)
+      await setToken(settings.provider, settings.endpoint)
     }),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.clearToken`, async () => {
       const { settings } = currentSettings()
-      await clearToken(settings.provider)
+      await clearToken(settings.provider, settings.endpoint)
     }),
   )
 

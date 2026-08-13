@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
+import { runExclusive } from './inflight.js'
 import { collectChanges } from '../git/collect.js'
 import { getGitApi } from '../git/api.js'
 import { createCollectHost } from '../git/collectHost.js'
@@ -16,7 +17,8 @@ import { languageName } from '../prompt/languages.js'
 import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
 import { redactFiles } from '../redact.js'
-import { diffBudgetChars, type Settings } from '../settings.js'
+import { diffBudgetChars, usableContextTokens, type Settings } from '../settings.js'
+import type { Repository } from '../types/git.js'
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -41,6 +43,24 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
   for (const problem of problems) {
     log.warn(`configuration: ${problem.message}`)
   }
+
+  // Three surfaces can fire this command; two at once against the same repository produced two
+  // progress notifications and a race for the commit box.
+  const outcome = await runExclusive(repository.rootUri.toString(), () =>
+    generateForRepository(repository, settings),
+  )
+  if (!outcome.started) {
+    void vscode.window.showInformationMessage(
+      'A commit message is already being generated for this repository.',
+    )
+  }
+}
+
+async function generateForRepository(
+  repository: Repository,
+  settings: Settings,
+): Promise<void> {
+  const log = getLog()
 
   await vscode.window.withProgress(
     {
@@ -72,7 +92,7 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
       // Deliberate: fighting that patch is how LAN calls break in corporate setups.
       // Optional everywhere: no token means the request goes out exactly as before, which is the
       // common local case. A token appears when a gateway sits in front of the server.
-      const credential = await readToken(settings.provider)
+      const credential = await readToken(settings.provider, settings.endpoint)
       let provider
       try {
         provider = createProvider(settings.provider, {
@@ -92,18 +112,23 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
         progress.report({ message: 'reading the model' })
         // Capabilities decide the budget and whether the reasoning trace must be suppressed.
         // A failure here is not fatal: generation still works with the fallback budget.
-        let contextTokens: number | undefined
+        let reportedContext: number | undefined
         let thinking = false
         try {
           const capabilities = await provider.describeModel(settings.model, signal)
-          contextTokens = capabilities.contextLength
+          reportedContext = capabilities.contextLength
           thinking = capabilities.thinking
-          log.info(
-            `model ${settings.model}: context=${contextTokens ?? 'unknown'} thinking=${thinking}`,
-          )
         } catch (error) {
           log.warn(`could not describe ${settings.model}: ${String(error)}`)
         }
+
+        // One number governs both the budget and the request. Two numbers is how the prompt gets
+        // built larger than the window asked for, and the model truncates without saying so.
+        const contextTokens = usableContextTokens(reportedContext)
+        log.info(
+          `model ${settings.model}: reported=${reportedContext ?? 'unknown'} ` +
+            `usable=${contextTokens ?? 'unknown'} thinking=${thinking}`,
+        )
 
         const budget = diffBudgetChars({
           ...(contextTokens ? { contextTokens } : {}),
@@ -154,7 +179,7 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
             omitted,
             suppressThinking: thinking,
             sanitize,
-            ...(contextTokens ? { contextTokens: Math.min(contextTokens, 32_768) } : {}),
+            ...(contextTokens ? { contextTokens } : {}),
           },
           signal,
         )

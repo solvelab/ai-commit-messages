@@ -1,3 +1,52 @@
+## [1.4.7](https://github.com/solvelab/ai-commit-messages/compare/v1.4.6...v1.4.7) (2026-08-13)
+
+
+### Bug Fixes
+
+* **commands:** uma geração por repositório e escrita no escopo que vale ([889638b](https://github.com/solvelab/ai-commit-messages/commit/889638b519e915df6fb29900b2826173f2ae4de6))
+
+## [1.4.6](https://github.com/solvelab/ai-commit-messages/compare/v1.4.5...v1.4.6) (2026-08-13)
+
+
+### Bug Fixes
+
+* **configure:** respeitar autenticação, permitir cancelar e não engolir o 401 ([000b7bd](https://github.com/solvelab/ai-commit-messages/commit/000b7bdd1036d34c54c6c2deaaefa5fc43deb8c4))
+
+## [1.4.5](https://github.com/solvelab/ai-commit-messages/compare/v1.4.4...v1.4.5) (2026-08-13)
+
+
+### Bug Fixes
+
+* **git:** descrever rename como rename e checar tamanho antes de ler ([3a6e908](https://github.com/solvelab/ai-commit-messages/commit/3a6e9089941914fede174253f11f89e8cc57a7d8))
+
+## [1.4.4](https://github.com/solvelab/ai-commit-messages/compare/v1.4.3...v1.4.4) (2026-08-13)
+
+
+### Bug Fixes
+
+* **prompt:** tentar o parse antes de aplicar heurística de texto ([eff3332](https://github.com/solvelab/ai-commit-messages/commit/eff3332d5809b9dc26502865eb29475144e2e6f0))
+
+## [1.4.3](https://github.com/solvelab/ai-commit-messages/compare/v1.4.2...v1.4.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **auth:** deduplicar header por caixa e prender a credencial ao host ([61268dc](https://github.com/solvelab/ai-commit-messages/commit/61268dc235501d9bd567475c68f5526144cbd038))
+
+## [1.4.2](https://github.com/solvelab/ai-commit-messages/compare/v1.4.1...v1.4.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **budget:** usar o mesmo contexto no orçamento e no pedido ([5b6722a](https://github.com/solvelab/ai-commit-messages/commit/5b6722a23b2bda0b4ee2ad1b518aa06b4a579e00))
+
+## [1.4.1](https://github.com/solvelab/ai-commit-messages/compare/v1.4.0...v1.4.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **settings:** normalizar o endpoint conforme o dialeto do provider ([e8fdaa4](https://github.com/solvelab/ai-commit-messages/commit/e8fdaa4bb3c0f08293bd158b8d30d80e71f04857))
+
 # [1.4.0](https://github.com/solvelab/ai-commit-messages/compare/v1.3.0...v1.4.0) (2026-08-13)
 
 

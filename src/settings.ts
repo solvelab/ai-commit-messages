@@ -71,8 +71,27 @@ export interface ReadResult {
   readonly problems: readonly SettingsProblem[]
 }
 
-/** Trims a full endpoint down to the base URL the adapters expect. */
-export function normalizeBaseUrl(raw: string): string | undefined {
+/**
+ * Operation paths every dialect shares. Pasting one of these is a mistake in any provider.
+ */
+const OPERATION_PATH = /\/+(chat\/completions|completions|models|embeddings)\/*$/i
+
+/**
+ * Paths that only Ollama's native API uses, plus its `/v1` shim. Stripping `/v1` is right for
+ * Ollama — its base has none — and **wrong** for every OpenAI-compatible endpoint, whose contract
+ * requires the base to end there.
+ */
+const OLLAMA_PATH = /\/+(api\/(generate|chat|tags|show)|v1(\/.*)?)\/*$/i
+
+/**
+ * Trims a full endpoint down to the base URL the adapters expect.
+ *
+ * The normalization is **provider-aware** on purpose. A single rule cannot serve both dialects:
+ * `https://api.groq.com/openai/v1` must keep its `/v1`, while `http://host:11434/api/generate`
+ * must lose everything after the host. Applying Ollama's rule to everything is what broke seven of
+ * the nine OpenAI-compatible presets between v1.1.0 and v1.4.0.
+ */
+export function normalizeBaseUrl(raw: string, provider: ProviderId = 'ollama'): string | undefined {
   const trimmed = raw.trim()
   if (!trimmed) {
     return undefined
@@ -87,7 +106,11 @@ export function normalizeBaseUrl(raw: string): string | undefined {
   if (!url.hostname) {
     return undefined
   }
-  const path = url.pathname.replace(/\/+(api\/(generate|chat|tags|show)|v1(\/.*)?)\/*$/i, '')
+  // An operation path is a mistake in any dialect; only Ollama also loses its `/api/...` and `/v1`.
+  const path =
+    provider === 'ollama'
+      ? url.pathname.replace(OLLAMA_PATH, '')
+      : url.pathname.replace(OPERATION_PATH, '')
   const cleanPath = path.replace(/\/+$/, '')
   return `${url.protocol}//${url.host}${cleanPath}`
 }
@@ -163,7 +186,8 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
     problems.push({ key: 'provider', message: `Unknown provider "${providerRaw}"; using ${DEFAULTS.provider}.` })
   }
 
-  const endpoint = normalizeBaseUrl(str(raw.endpoint, DEFAULTS.endpoint))
+  // Provider-aware: the endpoint is normalized for the dialect that will actually be spoken.
+  const endpoint = normalizeBaseUrl(str(raw.endpoint, DEFAULTS.endpoint), provider)
   if (!endpoint) {
     problems.push({ key: 'endpoint', message: 'The endpoint is not a valid URL; using the default.' })
   }
@@ -200,6 +224,21 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
  * exactly the dense-diff case.
  */
 export const CHARS_PER_TOKEN = 2.6
+
+/**
+ * Ceiling applied to the model's reported context window.
+ *
+ * A 128k window is real but expensive: the server allocates the KV cache for whatever `num_ctx`
+ * asks for, and a commit message never needs that much. The number that matters is that the
+ * **same** value governs the budget and the request — using the full window for one and a cap for
+ * the other truncates the prompt in silence.
+ */
+export const MAX_CONTEXT_TOKENS = 32_768
+
+/** The window actually used: reported, capped, and shared by budget and request. */
+export function usableContextTokens(reported: number | undefined): number | undefined {
+  return reported ? Math.min(reported, MAX_CONTEXT_TOKENS) : undefined
+}
 
 export function diffBudgetChars(options: {
   contextTokens?: number

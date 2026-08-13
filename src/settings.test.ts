@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { CHARS_PER_TOKEN, DEFAULTS, diffBudgetChars, normalizeBaseUrl, readSettings } from './settings.js'
+import {
+  CHARS_PER_TOKEN,
+  DEFAULTS,
+  diffBudgetChars,
+  MAX_CONTEXT_TOKENS,
+  normalizeBaseUrl,
+  readSettings,
+  usableContextTokens,
+} from './settings.js'
 
 describe('normalizeBaseUrl', () => {
   it.each([
@@ -143,5 +151,45 @@ describe('auth settings', () => {
     const { settings, problems } = readSettings({ headers: ['nope'] })
     expect(settings.headers).toEqual({})
     expect(problems.map(p => p.key)).toContain('headers')
+  })
+})
+
+describe('usableContextTokens — o mesmo número nos dois lados', () => {
+  it('capa uma janela grande', () => {
+    // llama3.1:8b reporta 131072; o request pedia 32k e o orçamento usava 131072.
+    expect(usableContextTokens(131_072)).toBe(MAX_CONTEXT_TOKENS)
+  })
+
+  it('mantém uma janela menor que o teto', () => {
+    expect(usableContextTokens(8_192)).toBe(8_192)
+  })
+
+  it('propaga o desconhecido, para o orçamento cair no fallback', () => {
+    expect(usableContextTokens(undefined)).toBeUndefined()
+  })
+
+  it('o orçamento calculado com o valor capado não excede a janela pedida', () => {
+    const usable = usableContextTokens(131_072)!
+    const budget = diffBudgetChars({
+      contextTokens: usable,
+      systemPromptChars: 1400,
+      maxOutputTokens: 512,
+      fallbackChars: 4000,
+    })
+    // O prompt em tokens, pela razão medida, tem que caber no num_ctx enviado.
+    const promptTokens = Math.ceil(budget / CHARS_PER_TOKEN) + Math.ceil(1400 / CHARS_PER_TOKEN) + 512
+    expect(promptTokens).toBeLessThanOrEqual(usable)
+  })
+
+  it('a divergência antiga teria falhado este teste', () => {
+    // Antes: orçamento com 131072, request com 32768.
+    const budgetComJanelaCheia = diffBudgetChars({
+      contextTokens: 131_072,
+      systemPromptChars: 1400,
+      maxOutputTokens: 512,
+      fallbackChars: 4000,
+    })
+    const tokensDoPrompt = Math.ceil(budgetComJanelaCheia / CHARS_PER_TOKEN)
+    expect(tokensDoPrompt).toBeGreaterThan(MAX_CONTEXT_TOKENS)
   })
 })
