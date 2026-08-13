@@ -72,7 +72,7 @@
     "compile-tests": "tsc -p . --outDir out",
     "check-types": "tsc --noEmit",
     "lint": "eslint",
-    "pretest": "npm run compile-tests",
+    "pretest": "npm run compile-tests && node esbuild.js",
     "test": "vscode-test",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
