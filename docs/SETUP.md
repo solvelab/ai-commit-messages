@@ -124,15 +124,17 @@ patch de proxy descarta o `rejectUnauthorized` do dispatcher, então a opção m
 
 ### Onde fica o endpoint
 
-O campo `aiCommitMessages.endpoint` tem escopo `machine`. O VS Code esconde settings `machine` da
-aba **User** numa sessão remota — elas aparecem na aba **Remote [WSL: Debian]**. Não é um valor
-fixo: é um valor por máquina.
+Na página de settings, campo **Endpoint**, ao lado do Provider. Default `http://localhost:11434`,
+que serve para um Ollama na própria máquina. Para um servidor na rede, digite o endereço:
+`http://192.168.1.10:11434`. Caminho completo (`/api/generate`) é aparado sozinho.
 
-O escopo não é enfeite. Uma setting `machine` **não pode** ser gravada em `.vscode/settings.json`,
-então um repositório clonado não consegue apontar o teu diff staged para o servidor de outra pessoa.
+O campo teve escopo `machine` até a v1.10, o que o escondia da aba **User** numa sessão remota. Isso
+saiu: o campo que a pessoa configura primeiro não pode ficar em outra aba.
 
-Para editar de qualquer aba: `AI Commit Messages: Set endpoint…`, também linkado na descrição do
-**Provider**.
+O que aquele escopo comprava era impedir que um repositório clonado gravasse endpoint em
+`.vscode/settings.json` e redirecionasse o teu diff staged. Essa garantia continua, em outro lugar:
+se o endpoint efetivo vier do repositório e for diferente do teu, a extensão pergunta antes de
+mandar qualquer coisa, uma vez por endpoint. Recusou, a geração é cancelada.
 
 ### Onde entra a API key
 

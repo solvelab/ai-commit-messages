@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { generateCommitMessage } from './commands/generate.js'
+import { generateCommitMessage, initEndpointConfirmations } from './commands/generate.js'
 import { configure } from './commands/configure.js'
 import { diagnose } from './commands/diagnose.js'
 import { cachedModelIds, initModelCache, selectModel } from './commands/selectModel.js'
@@ -10,12 +10,15 @@ import { migrateLegacySettings, offerMigrationOnce } from './commands/migrate.js
 import { clearToken, initSecrets, readToken, setToken } from './commands/secrets.js'
 import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
-import { createLog, disposeLog } from './log.js'
+import { createLog, disposeLog, getLog } from './log.js'
 import { createStatusBar } from './statusBar.js'
+import { writeSetting } from './commands/writeSetting.js'
 import { hostOf } from './endpoint.js'
 import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
 import { knownModels } from './models/catalog.js'
 import { modelBelongs } from './models/belongs.js'
+
+const ENDPOINT_ADOPTED_KEY = 'endpointAdoptedIntoVisibleScope'
 
 export const GENERATE_COMMAND = `${CONFIG_SECTION}.generate`
 export const MIGRATE_COMMAND = `${CONFIG_SECTION}.migrateSettings`
@@ -27,6 +30,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(log)
   initSecrets(context)
   initModelCache(context)
+  initEndpointConfirmations(context)
+  void adoptEndpointIntoVisibleScope(context)
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
@@ -135,3 +140,34 @@ async function warnAboutMissingKey(): Promise<void> {
   }
 }
 
+/**
+ * Moves an endpoint left in the remote settings file into the one the User tab shows.
+ *
+ * `endpoint` was `machine`-scoped until now, so its value was written to the remote settings file.
+ * Changing the scope alone would not move it: `configurationService.ts:1135-1141` keeps sending the
+ * write to the remote file while a remote value exists — and the User tab, which shows the local
+ * file, would display an empty box for someone who has had an endpoint configured all along.
+ *
+ * Runs once. Only touches the value when the local file does not already carry it.
+ */
+async function adoptEndpointIntoVisibleScope(context: vscode.ExtensionContext): Promise<void> {
+  if (context.globalState.get<boolean>(ENDPOINT_ADOPTED_KEY)) {
+    return
+  }
+
+  const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
+  const inspected = configuration.inspect<string>('endpoint')
+  const effective = configuration.get<string>('endpoint')?.trim()
+
+  // Nothing configured, or already where it shows: nothing to do.
+  if (effective && effective !== inspected?.defaultValue && !inspected?.globalValue) {
+    const written = await writeSetting('endpoint', effective)
+    getLog().info(
+      written.ok
+        ? `endpoint ${effective} adopted into the visible scope`
+        : `endpoint ${effective} could not be adopted (${written.shadow})`,
+    )
+  }
+
+  await context.globalState.update(ENDPOINT_ADOPTED_KEY, true)
+}

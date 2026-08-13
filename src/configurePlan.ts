@@ -68,7 +68,7 @@ export function validateEndpointInput(
   provider: ProviderId = 'ollama',
 ): string | undefined {
   if (!value.trim()) {
-    return 'Type the base URL of the model server, e.g. http://192.168.15.6:11434'
+    return 'Type the base URL of the model server, e.g. http://localhost:11434'
   }
   if (!normalizeBaseUrl(value, provider)) {
     return 'That is not a valid URL.'

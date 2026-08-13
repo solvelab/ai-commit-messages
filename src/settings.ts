@@ -54,7 +54,7 @@ export interface Settings {
 export const DEFAULTS: Settings = {
   backend: resolveBackend(DEFAULT_BACKEND_ID),
   provider: 'ollama',
-  endpoint: 'http://127.0.0.1:11434',
+  endpoint: 'http://localhost:11434',
   model: 'qwen2.5-coder:7b',
   language: 'pt-BR',
   promptTemplate: '',
