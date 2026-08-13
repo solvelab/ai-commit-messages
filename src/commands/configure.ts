@@ -147,10 +147,10 @@ async function pickModel(
   if (unauthorized) {
     // Falling through to "type the model name" would hide the actual cause.
     const choice = await vscode.window.showErrorMessage(
-      `${endpoint} rejected the credential. A gateway or a hosted endpoint usually needs a token.`,
-      'Set token…',
+      `${endpoint} rejected the credential. A gateway or a hosted endpoint usually needs an API key.`,
+      'Set API key…',
     )
-    if (choice === 'Set token…') {
+    if (choice === 'Set API key…') {
       await setToken(providerId, endpoint)
     }
     return undefined
