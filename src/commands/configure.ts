@@ -12,6 +12,7 @@ import { withAbort } from '../net.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { createProvider } from '../providers/registry.js'
 import { readToken, setToken } from './secrets.js'
+import { warmModelCache } from './selectModel.js'
 import { ProviderError, type FetchLike } from '../providers/types.js'
 import { BACKENDS, type Backend } from '../providers/catalog.js'
 import { type ProviderId, type Settings } from '../settings.js'
@@ -130,6 +131,8 @@ async function pickModel(
       return undefined
     }
     models = outcome.value
+    // Warms the picker: after configuring, `Select model…` opens instantly.
+    await warmModelCache({ ...settings, backend, endpoint }, models)
   } catch (error) {
     unauthorized = error instanceof ProviderError && error.code === 'unauthorized'
     log.warn(`could not list models at ${endpoint}: ${String(error)}`)

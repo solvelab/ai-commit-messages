@@ -99,6 +99,12 @@
         "command": "aiCommitMessages.diagnose",
         "title": "Diagnose connection",
         "category": "AI Commit Messages"
+      },
+      {
+        "command": "aiCommitMessages.selectModel",
+        "title": "Select model…",
+        "category": "AI Commit Messages",
+        "icon": "$(list-selection)"
       }
     ],
     "menus": {
@@ -112,6 +118,11 @@
           "command": "aiCommitMessages.configure",
           "when": "scmProvider == git",
           "group": "navigation@99"
+        },
+        {
+          "command": "aiCommitMessages.selectModel",
+          "when": "scmProvider == git",
+          "group": "navigation@98"
         }
       ]
     },
@@ -182,7 +193,7 @@
             "type": "string",
             "default": "qwen2.5-coder:7b",
             "scope": "window",
-            "markdownDescription": "Model to generate with. Must exist on the server.",
+            "markdownDescription": "Model to generate with. Must exist on the server.\n\n_A dropdown is not possible here — a setting's list is fixed in the manifest and cannot be filled in at runtime. Use_ **AI Commit Messages: Select model…** _(also the ☰ icon in the Source Control title bar) to pick from the models your backend actually offers._",
             "order": 3
           },
           "aiCommitMessages.timeoutMs": {
