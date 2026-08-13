@@ -108,106 +108,130 @@
         "when": "!terminalFocus"
       }
     ],
-    "configuration": {
-      "title": "AI Commit Messages",
-      "properties": {
-        "aiCommitMessages.provider": {
-          "type": "string",
-          "enum": [
-            "ollama",
-            "openai-compat"
-          ],
-          "default": "ollama",
-          "enumDescriptions": [
-            "Ollama's native API (/api/chat).",
-            "Any OpenAI-compatible endpoint (/v1/chat/completions)."
-          ],
-          "scope": "window",
-          "markdownDescription": "Backend to generate with."
-        },
-        "aiCommitMessages.endpoint": {
-          "type": "string",
-          "default": "http://127.0.0.1:11434",
-          "scope": "machine",
-          "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…** from the Command Palette."
-        },
-        "aiCommitMessages.model": {
-          "type": "string",
-          "default": "qwen2.5-coder:7b",
-          "scope": "window",
-          "markdownDescription": "Model to generate with. Must exist on the server."
-        },
-        "aiCommitMessages.language": {
-          "type": "string",
-          "default": "pt-BR",
-          "scope": "window",
-          "enum": [
-            "pt-BR",
-            "en",
-            "es",
-            "fr",
-            "de",
-            "it"
-          ],
-          "enumItemLabels": [
-            "Português (Brasil)",
-            "English",
-            "Español",
-            "Français",
-            "Deutsch",
-            "Italiano"
-          ],
-          "enumDescriptions": [
-            "Mensagens em português brasileiro.",
-            "Messages in English.",
-            "Mensajes en español.",
-            "Messages en français.",
-            "Nachrichten auf Deutsch.",
-            "Messaggi in italiano."
-          ],
-          "markdownDescription": "Language of the generated commit message."
-        },
-        "aiCommitMessages.promptTemplate": {
-          "type": "string",
-          "default": "",
-          "editPresentation": "multilineText",
-          "scope": "window",
-          "markdownDescription": "Rules sent to the model. **Leave empty to use the built-in prompt for the language chosen above** (available in Portuguese and English).\n\nTo read or adapt it, run **AI Commit Messages: Insert the default prompt into settings** — it writes the resolved text here.\n\nSubstituted when present: `{language}`, `{languageTag}`, `{types}`, `{maxBodyWords}`."
-        },
-        "aiCommitMessages.maxDiffChars": {
-          "type": "number",
-          "default": 4000,
-          "minimum": 200,
-          "maximum": 500000,
-          "scope": "window",
-          "markdownDescription": "Diff characters to send when the model's context window is unknown. When it is known, the budget is computed from it instead."
-        },
-        "aiCommitMessages.maxBodyWords": {
-          "type": "number",
-          "default": 10,
-          "minimum": 3,
-          "maximum": 40,
-          "scope": "window",
-          "markdownDescription": "Maximum words per body line."
-        },
-        "aiCommitMessages.temperature": {
-          "type": "number",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 1,
-          "scope": "window",
-          "markdownDescription": "Sampling temperature. `0` is the right default for structured output."
-        },
-        "aiCommitMessages.timeoutMs": {
-          "type": "number",
-          "default": 60000,
-          "minimum": 1000,
-          "maximum": 600000,
-          "scope": "window",
-          "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s."
+    "configuration": [
+      {
+        "title": "AI Commit Messages: Connection",
+        "order": 1,
+        "properties": {
+          "aiCommitMessages.provider": {
+            "type": "string",
+            "enum": [
+              "ollama",
+              "openai-compat"
+            ],
+            "default": "ollama",
+            "enumDescriptions": [
+              "Ollama's native API (/api/chat).",
+              "Any OpenAI-compatible endpoint (/v1/chat/completions)."
+            ],
+            "scope": "window",
+            "markdownDescription": "Backend to generate with.",
+            "order": 1
+          },
+          "aiCommitMessages.endpoint": {
+            "type": "string",
+            "default": "http://127.0.0.1:11434",
+            "scope": "machine",
+            "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…** from the Command Palette.",
+            "order": 2
+          },
+          "aiCommitMessages.model": {
+            "type": "string",
+            "default": "qwen2.5-coder:7b",
+            "scope": "window",
+            "markdownDescription": "Model to generate with. Must exist on the server.",
+            "order": 3
+          },
+          "aiCommitMessages.timeoutMs": {
+            "type": "number",
+            "default": 60000,
+            "minimum": 1000,
+            "maximum": 600000,
+            "scope": "window",
+            "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s.",
+            "order": 4
+          }
+        }
+      },
+      {
+        "title": "AI Commit Messages: Message",
+        "order": 2,
+        "properties": {
+          "aiCommitMessages.language": {
+            "type": "string",
+            "default": "pt-BR",
+            "scope": "window",
+            "enum": [
+              "pt-BR",
+              "en",
+              "es",
+              "fr",
+              "de",
+              "it"
+            ],
+            "enumItemLabels": [
+              "Português (Brasil)",
+              "English",
+              "Español",
+              "Français",
+              "Deutsch",
+              "Italiano"
+            ],
+            "enumDescriptions": [
+              "Mensagens em português brasileiro.",
+              "Messages in English.",
+              "Mensajes en español.",
+              "Messages en français.",
+              "Nachrichten auf Deutsch.",
+              "Messaggi in italiano."
+            ],
+            "markdownDescription": "Language of the generated commit message.",
+            "order": 1
+          },
+          "aiCommitMessages.promptTemplate": {
+            "type": "string",
+            "default": "",
+            "editPresentation": "multilineText",
+            "scope": "window",
+            "markdownDescription": "Rules sent to the model. **Leave empty to use the built-in prompt for the language chosen above** (available in Portuguese and English).\n\nTo read or adapt it, run **AI Commit Messages: Insert the default prompt into settings** — it writes the resolved text here.\n\nSubstituted when present: `{language}`, `{languageTag}`, `{types}`, `{maxBodyWords}`.",
+            "order": 2
+          },
+          "aiCommitMessages.maxBodyWords": {
+            "type": "number",
+            "default": 10,
+            "minimum": 3,
+            "maximum": 40,
+            "scope": "window",
+            "markdownDescription": "Maximum words per body line.",
+            "order": 3
+          }
+        }
+      },
+      {
+        "title": "AI Commit Messages: Advanced",
+        "order": 3,
+        "properties": {
+          "aiCommitMessages.temperature": {
+            "type": "number",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 1,
+            "scope": "window",
+            "markdownDescription": "Sampling temperature. `0` is the right default for structured output.",
+            "order": 1
+          },
+          "aiCommitMessages.maxDiffChars": {
+            "type": "number",
+            "default": 4000,
+            "minimum": 200,
+            "maximum": 500000,
+            "scope": "window",
+            "markdownDescription": "Diff characters to send when the model's context window is unknown. When it is known, the budget is computed from it instead.",
+            "order": 2
+          }
         }
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
