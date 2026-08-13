@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/solvelab/ai-commit-messages/compare/v1.5.0...v1.6.0) (2026-08-13)
+
+
+### Features
+
+* **models:** seletor de modelo por backend, com lista pré-carregada ([f204365](https://github.com/solvelab/ai-commit-messages/commit/f20436512a6dd39d386f6d3744b812c26a6b5245))
+
 # [1.5.0](https://github.com/solvelab/ai-commit-messages/compare/v1.4.7...v1.5.0) (2026-08-13)
 
 
