@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { ConfigureError, planConfiguration, validateEndpointInput } from './configurePlan.js'
+import {
+  ConfigureError,
+  planConfiguration,
+  validateEndpointInput,
+  wizardProviderContext,
+} from './configurePlan.js'
 
 describe('planConfiguration', () => {
   it('writes the three answers to the global target', () => {
@@ -64,5 +69,39 @@ describe('validateEndpointInput', () => {
 
   it('accepts a full endpoint — it is trimmed, not rejected', () => {
     expect(validateEndpointInput('http://192.168.15.6:11434/api/generate')).toBeUndefined()
+  })
+})
+
+describe('wizardProviderContext — o que o assistente monta', () => {
+  const base = {
+    endpoint: 'http://gw:11434',
+    authHeader: 'x-api-key',
+    authScheme: '',
+    headers: { 'X-Title': 'acm' },
+  }
+
+  it('carrega a autenticação configurada, que o assistente ignorava', () => {
+    // Sem isso, um gateway que espera x-api-key recebia Authorization: Bearer e recusava.
+    const ctx = wizardProviderContext(base)
+    expect(ctx.auth).toEqual({ header: 'x-api-key', scheme: '' })
+  })
+
+  it('carrega os headers extras', () => {
+    expect(wizardProviderContext(base).headers).toEqual({ 'X-Title': 'acm' })
+  })
+
+  it('inclui o token só quando existe', () => {
+    expect(wizardProviderContext(base).token).toBeUndefined()
+    expect(wizardProviderContext({ ...base, token: 'abc' }).token).toBe('abc')
+  })
+
+  it('inclui o preset só quando existe', () => {
+    expect(wizardProviderContext(base).presetId).toBeUndefined()
+    expect(wizardProviderContext({ ...base, presetId: 'groq' }).presetId).toBe('groq')
+  })
+
+  it('monta o mesmo contrato que a geração usa', () => {
+    const ctx = wizardProviderContext({ ...base, presetId: 'groq', token: 'k' })
+    expect(Object.keys(ctx).sort()).toEqual(['auth', 'endpoint', 'headers', 'presetId', 'token'])
   })
 })

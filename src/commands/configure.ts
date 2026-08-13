@@ -1,14 +1,20 @@
 import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
-import { planConfiguration, validateEndpointInput, type ConfigureAnswers } from '../configurePlan.js'
+import {
+  planConfiguration,
+  validateEndpointInput,
+  wizardProviderContext,
+  type ConfigureAnswers,
+} from '../configurePlan.js'
 import { getLog } from '../log.js'
+import { withAbort } from '../net.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { COMPAT_PRESETS, findPreset } from '../providers/presets.js'
 import { createProvider, isImplemented } from '../providers/registry.js'
-import { readToken } from './secrets.js'
-import type { FetchLike } from '../providers/types.js'
-import { PROVIDERS, type ProviderId } from '../settings.js'
+import { readToken, setToken } from './secrets.js'
+import { ProviderError, type FetchLike } from '../providers/types.js'
+import { PROVIDERS, type ProviderId, type Settings } from '../settings.js'
 
 const PROVIDER_LABELS: Record<ProviderId, { label: string; detail: string }> = {
   ollama: {
@@ -82,7 +88,7 @@ export async function configure(): Promise<void> {
     return
   }
 
-  const model = await pickModel(providerPick.id, endpoint, settings.model, presetId)
+  const model = await pickModel(providerPick.id, endpoint, settings, presetId)
   if (model === undefined) {
     return
   }
@@ -117,26 +123,59 @@ export async function configure(): Promise<void> {
 async function pickModel(
   providerId: ProviderId,
   endpoint: string,
-  current: string,
+  settings: Settings,
   presetId?: string,
 ): Promise<string | undefined> {
   const log = getLog()
+  const current = settings.model
   let models: { id: string; label: string; detail?: string }[] = []
+  let unauthorized = false
 
   try {
     const token = await readToken(providerId, endpoint)
+    // The wizard must speak the same authentication the generation will.
     const provider = createProvider(providerId, {
-      endpoint,
+      ...wizardProviderContext({
+        endpoint,
+        ...(presetId ? { presetId } : {}),
+        ...(token ? { token } : {}),
+        authHeader: settings.authHeader,
+        authScheme: settings.authScheme,
+        headers: settings.headers,
+      }),
       fetch: globalThis.fetch as FetchLike,
-      ...(presetId ? { presetId } : {}),
-      ...(token ? { token } : {}),
     })
-    models = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Reading the model list…' },
-      () => provider.listModels(),
+    // `fetch` has no timeout of its own; an endpoint that accepts the connection and never answers
+    // used to hang the wizard with no way out.
+    const outcome = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Reading the model list…',
+        cancellable: true,
+      },
+      (_progress, token) =>
+        withAbort({ token, timeoutMs: settings.timeoutMs }, signal => provider.listModels(signal)),
     )
+    if (!outcome.ok) {
+      log.info(`model listing ${outcome.reason}`)
+      return undefined
+    }
+    models = outcome.value
   } catch (error) {
+    unauthorized = error instanceof ProviderError && error.code === 'unauthorized'
     log.warn(`could not list models at ${endpoint}: ${String(error)}`)
+  }
+
+  if (unauthorized) {
+    // Falling through to "type the model name" would hide the actual cause.
+    const choice = await vscode.window.showErrorMessage(
+      `${endpoint} rejected the credential. A gateway or a hosted endpoint usually needs a token.`,
+      'Set token…',
+    )
+    if (choice === 'Set token…') {
+      await setToken(providerId, endpoint)
+    }
+    return undefined
   }
 
   if (models.length === 0) {
