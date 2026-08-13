@@ -16,7 +16,7 @@ import { languageName } from '../prompt/languages.js'
 import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
 import { redactFiles } from '../redact.js'
-import { diffBudgetChars, type Settings } from '../settings.js'
+import { diffBudgetChars, usableContextTokens, type Settings } from '../settings.js'
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -92,18 +92,23 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
         progress.report({ message: 'reading the model' })
         // Capabilities decide the budget and whether the reasoning trace must be suppressed.
         // A failure here is not fatal: generation still works with the fallback budget.
-        let contextTokens: number | undefined
+        let reportedContext: number | undefined
         let thinking = false
         try {
           const capabilities = await provider.describeModel(settings.model, signal)
-          contextTokens = capabilities.contextLength
+          reportedContext = capabilities.contextLength
           thinking = capabilities.thinking
-          log.info(
-            `model ${settings.model}: context=${contextTokens ?? 'unknown'} thinking=${thinking}`,
-          )
         } catch (error) {
           log.warn(`could not describe ${settings.model}: ${String(error)}`)
         }
+
+        // One number governs both the budget and the request. Two numbers is how the prompt gets
+        // built larger than the window asked for, and the model truncates without saying so.
+        const contextTokens = usableContextTokens(reportedContext)
+        log.info(
+          `model ${settings.model}: reported=${reportedContext ?? 'unknown'} ` +
+            `usable=${contextTokens ?? 'unknown'} thinking=${thinking}`,
+        )
 
         const budget = diffBudgetChars({
           ...(contextTokens ? { contextTokens } : {}),
@@ -154,7 +159,7 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
             omitted,
             suppressThinking: thinking,
             sanitize,
-            ...(contextTokens ? { contextTokens: Math.min(contextTokens, 32_768) } : {}),
+            ...(contextTokens ? { contextTokens } : {}),
           },
           signal,
         )

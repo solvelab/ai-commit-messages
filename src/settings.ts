@@ -225,6 +225,21 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
  */
 export const CHARS_PER_TOKEN = 2.6
 
+/**
+ * Ceiling applied to the model's reported context window.
+ *
+ * A 128k window is real but expensive: the server allocates the KV cache for whatever `num_ctx`
+ * asks for, and a commit message never needs that much. The number that matters is that the
+ * **same** value governs the budget and the request — using the full window for one and a cap for
+ * the other truncates the prompt in silence.
+ */
+export const MAX_CONTEXT_TOKENS = 32_768
+
+/** The window actually used: reported, capped, and shared by budget and request. */
+export function usableContextTokens(reported: number | undefined): number | undefined {
+  return reported ? Math.min(reported, MAX_CONTEXT_TOKENS) : undefined
+}
+
 export function diffBudgetChars(options: {
   contextTokens?: number
   systemPromptChars: number
