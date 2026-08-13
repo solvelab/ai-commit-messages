@@ -78,6 +78,7 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
           endpoint: settings.endpoint,
           fetch: globalThis.fetch as FetchLike,
           headers: settings.headers,
+          presetId: settings.compatPreset,
           ...(credential ? { token: credential } : {}),
           auth: { header: settings.authHeader, scheme: settings.authScheme },
         })
@@ -218,6 +219,10 @@ function providerMessage(error: ProviderError, settings: Settings): string {
   switch (error.code) {
     case 'model-not-found':
       return `The model "${settings.model}" is not installed on ${settings.endpoint}.`
+    case 'rate-limited':
+      return `The backend is rate limiting: ${error.message}`
+    case 'unsupported-parameter':
+      return `The endpoint refused a request field: ${error.message} Try a different preset.`
     case 'unauthorized':
       return `${settings.endpoint} rejected the credential. A gateway in front of the server usually means a token is required.`
     case 'network':

@@ -4,6 +4,7 @@ import { currentSettings } from '../config.js'
 import { planConfiguration, validateEndpointInput, type ConfigureAnswers } from '../configurePlan.js'
 import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
+import { COMPAT_PRESETS, findPreset } from '../providers/presets.js'
 import { createProvider, isImplemented } from '../providers/registry.js'
 import { readToken } from './secrets.js'
 import type { FetchLike } from '../providers/types.js'
@@ -47,10 +48,32 @@ export async function configure(): Promise<void> {
     return
   }
 
+  // The OpenAI-compatible world is not one API: the preset decides the base URL and which
+  // request fields are safe to send.
+  let presetId: string | undefined
+  if (providerPick.id === 'openai-compat') {
+    const presetPick = await vscode.window.showQuickPick(
+      COMPAT_PRESETS.map(preset => ({
+        label: preset.label,
+        description: preset.baseUrl || 'you supply the URL',
+        ...(preset.note ? { detail: preset.note } : {}),
+        id: preset.id,
+      })),
+      { title: 'AI Commit Messages (1b/3)', placeHolder: 'Which flavour?' },
+    )
+    if (!presetPick) {
+      return
+    }
+    presetId = presetPick.id
+  }
+
+  const suggestedEndpoint =
+    (presetId ? findPreset(presetId)?.baseUrl : undefined) || settings.endpoint
+
   const endpoint = await vscode.window.showInputBox({
     title: 'AI Commit Messages (2/3)',
     prompt: 'Base URL of the model server. A full endpoint is trimmed automatically.',
-    value: settings.endpoint,
+    value: suggestedEndpoint,
     placeHolder: 'http://192.168.15.6:11434',
     validateInput: validateEndpointInput,
     ignoreFocusOut: true,
@@ -59,7 +82,7 @@ export async function configure(): Promise<void> {
     return
   }
 
-  const model = await pickModel(providerPick.id, endpoint, settings.model)
+  const model = await pickModel(providerPick.id, endpoint, settings.model, presetId)
   if (model === undefined) {
     return
   }
@@ -68,6 +91,9 @@ export async function configure(): Promise<void> {
 
   try {
     const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
+    if (presetId) {
+      await configuration.update('compatPreset', presetId, vscode.ConfigurationTarget.Global)
+    }
     for (const write of planConfiguration(answers)) {
       // Always Global: `endpoint` is machine-scoped, and under a remote session VS Code resolves
       // this to the remote settings file — where a per-machine endpoint belongs.
@@ -92,6 +118,7 @@ async function pickModel(
   providerId: ProviderId,
   endpoint: string,
   current: string,
+  presetId?: string,
 ): Promise<string | undefined> {
   const log = getLog()
   let models: { id: string; label: string; detail?: string }[] = []
@@ -101,6 +128,7 @@ async function pickModel(
     const provider = createProvider(providerId, {
       endpoint,
       fetch: globalThis.fetch as FetchLike,
+      ...(presetId ? { presetId } : {}),
       ...(token ? { token } : {}),
     })
     models = await vscode.window.withProgress(

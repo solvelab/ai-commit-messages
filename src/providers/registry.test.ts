@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createProvider, isImplemented, knownProviders } from './registry.js'
 import { OllamaProvider } from './ollama.js'
+import { OpenAICompatProvider } from './openaiCompat.js'
 import { ProviderError, type FetchLike } from './types.js'
 import { PROVIDERS, type ProviderId } from '../settings.js'
 
@@ -21,10 +22,21 @@ describe('createProvider', () => {
     expect(createProvider('ollama', context)).toBeInstanceOf(OllamaProvider)
   })
 
-  it('refuses openai-compat out loud instead of silently using Ollama', () => {
-    // The bug this module exists for: the provider setting was never read.
-    expect(() => createProvider('openai-compat', context)).toThrow(ProviderError)
-    expect(() => createProvider('openai-compat', context)).toThrow(/not available yet/)
+  it('builds the OpenAI-compatible adapter for openai-compat', () => {
+    // The bug this module exists for: the provider setting was never read, so this used to be an
+    // OllamaProvider.
+    const provider = createProvider('openai-compat', { ...context, endpoint: 'http://h/v1' })
+    expect(provider).toBeInstanceOf(OpenAICompatProvider)
+    expect(provider.id).toBe('openai-compat')
+  })
+
+  it('passes the preset through', () => {
+    const provider = createProvider('openai-compat', {
+      ...context,
+      endpoint: 'https://api.groq.com/openai/v1',
+      presetId: 'groq',
+    }) as OpenAICompatProvider
+    expect(provider.preset.id).toBe('groq')
   })
 
   it.each(PROVIDERS)('handles %s — either builds it or refuses it, never the wrong one', id => {
