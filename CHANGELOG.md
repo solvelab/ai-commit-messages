@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/solvelab/ai-commit-messages/compare/v1.4.1...v1.4.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **budget:** usar o mesmo contexto no orçamento e no pedido ([5b6722a](https://github.com/solvelab/ai-commit-messages/commit/5b6722a23b2bda0b4ee2ad1b518aa06b4a579e00))
+
 ## [1.4.1](https://github.com/solvelab/ai-commit-messages/compare/v1.4.0...v1.4.1) (2026-08-13)
 
 
