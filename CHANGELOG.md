@@ -1,3 +1,10 @@
+## [1.4.7](https://github.com/solvelab/ai-commit-messages/compare/v1.4.6...v1.4.7) (2026-08-13)
+
+
+### Bug Fixes
+
+* **commands:** uma geração por repositório e escrita no escopo que vale ([889638b](https://github.com/solvelab/ai-commit-messages/commit/889638b519e915df6fb29900b2826173f2ae4de6))
+
 ## [1.4.6](https://github.com/solvelab/ai-commit-messages/compare/v1.4.5...v1.4.6) (2026-08-13)
 
 
