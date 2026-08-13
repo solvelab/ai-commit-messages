@@ -94,6 +94,11 @@
         "command": "aiCommitMessages.clearToken",
         "title": "Clear token",
         "category": "AI Commit Messages"
+      },
+      {
+        "command": "aiCommitMessages.diagnose",
+        "title": "Diagnose connection",
+        "category": "AI Commit Messages"
       }
     ],
     "menus": {
