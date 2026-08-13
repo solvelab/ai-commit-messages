@@ -68,6 +68,11 @@
         "title": "Generate Commit Message",
         "category": "AI Commit Messages",
         "icon": "$(sparkle)"
+      },
+      {
+        "command": "aiCommitMessages.migrateSettings",
+        "title": "Import settings from the Ollama Commit extension",
+        "category": "AI Commit Messages"
       }
     ],
     "menus": {

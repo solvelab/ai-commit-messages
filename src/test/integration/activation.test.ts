@@ -39,7 +39,7 @@ suite('activation', () => {
     const contributed = (
       extension?.packageJSON.contributes?.commands as { command: string }[] | undefined
     )?.map(c => c.command)
-    assert.deepEqual(contributed, [GENERATE_COMMAND])
+    assert.deepEqual(contributed, [GENERATE_COMMAND, 'aiCommitMessages.migrateSettings'])
   })
 
   test('the SCM title menu entry targets git only', () => {
