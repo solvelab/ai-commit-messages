@@ -72,10 +72,11 @@ suite('settings layout', () => {
       'authScheme',
       'headers',
       'compatPreset',
+      'redactSecrets',
     ]) {
       assert.ok(keys.includes(`aiCommitMessages.${key}`), `aiCommitMessages.${key} disappeared`)
     }
-    assert.equal(keys.length, 13)
+    assert.equal(keys.length, 14)
   })
 
   test('only the endpoint stays machine-scoped', () => {

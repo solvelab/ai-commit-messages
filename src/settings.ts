@@ -34,6 +34,8 @@ export interface Settings {
   readonly headers: Record<string, string>
   /** Which OpenAI-compatible flavour to speak. */
   readonly compatPreset: string
+  /** Mask recognizable secrets in the diff before sending it. */
+  readonly redactSecrets: boolean
 }
 
 export const DEFAULTS: Settings = {
@@ -51,6 +53,7 @@ export const DEFAULTS: Settings = {
   authScheme: 'Bearer',
   headers: {},
   compatPreset: 'custom',
+  redactSecrets: true,
 }
 
 export interface SettingsProblem {
@@ -166,6 +169,7 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       authScheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULTS.authScheme,
       headers: readHeaders(raw.headers, problems),
       compatPreset: str(raw.compatPreset, DEFAULTS.compatPreset),
+      redactSecrets: typeof raw.redactSecrets === 'boolean' ? raw.redactSecrets : DEFAULTS.redactSecrets,
     },
     problems,
   }
