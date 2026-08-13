@@ -22,6 +22,7 @@ export function currentSettings(scope?: vscode.Uri): ReadResult {
     'headers',
     'compatPreset',
     'redactSecrets',
+    'excludeGlobs',
   ]) {
     raw[key] = configuration.get(key)
   }
