@@ -8,19 +8,13 @@ import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
 import { getLog } from '../log.js'
 import { withAbort } from '../net.js'
-import { OllamaProvider } from '../providers/ollama.js'
-import { ProviderError, type CommitProvider, type FetchLike } from '../providers/types.js'
+import { createProvider } from '../providers/registry.js'
+import { ProviderError, type FetchLike } from '../providers/types.js'
 import { generateMessage, PipelineError } from '../prompt/pipeline.js'
 import { languageName } from '../prompt/languages.js'
 import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
 import { diffBudgetChars, type Settings } from '../settings.js'
-
-function createProvider(settings: Settings): CommitProvider {
-  // `globalThis.fetch` here is the one the extension host patched for proxy and certificates.
-  // That is deliberate: fighting the patch is how LAN calls break in corporate setups.
-  return new OllamaProvider({ endpoint: settings.endpoint, fetch: globalThis.fetch as FetchLike })
-}
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -72,7 +66,18 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
         )
       }
 
-      const provider = createProvider(settings)
+      // `globalThis.fetch` is the one the extension host patched for proxy and certificates.
+      // Deliberate: fighting that patch is how LAN calls break in corporate setups.
+      let provider
+      try {
+        provider = createProvider(settings.provider, {
+          endpoint: settings.endpoint,
+          fetch: globalThis.fetch as FetchLike,
+        })
+      } catch (error) {
+        reportFailure(error, settings)
+        return
+      }
 
       const outcome = await withAbort({ token, timeoutMs: settings.timeoutMs }, async signal => {
         progress.report({ message: 'reading the model' })

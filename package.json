@@ -121,8 +121,8 @@
             ],
             "default": "ollama",
             "enumDescriptions": [
-              "Ollama's native API (/api/chat).",
-              "Any OpenAI-compatible endpoint (/v1/chat/completions)."
+              "Ollama's native API (/api/chat). Supports num_ctx, structured output and think:false.",
+              "Any OpenAI-compatible endpoint (/v1/chat/completions). NOT AVAILABLE YET — see issue #31."
             ],
             "scope": "window",
             "markdownDescription": "Backend to generate with.",

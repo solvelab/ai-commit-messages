@@ -4,7 +4,7 @@ import { currentSettings } from '../config.js'
 import { planConfiguration, validateEndpointInput, type ConfigureAnswers } from '../configurePlan.js'
 import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
-import { OllamaProvider } from '../providers/ollama.js'
+import { createProvider, isImplemented } from '../providers/registry.js'
 import type { FetchLike } from '../providers/types.js'
 import { PROVIDERS, type ProviderId } from '../settings.js'
 
@@ -33,7 +33,13 @@ export async function configure(): Promise<void> {
   const { settings } = currentSettings()
 
   const providerPick = await vscode.window.showQuickPick(
-    PROVIDERS.map(id => ({ id, ...PROVIDER_LABELS[id], picked: id === settings.provider })),
+    PROVIDERS.map(id => ({
+      id,
+      ...PROVIDER_LABELS[id],
+      // Say it in the list rather than after three steps of setup.
+      description: isImplemented(id) ? undefined : 'not available yet',
+      picked: id === settings.provider,
+    })),
     { title: 'AI Commit Messages (1/3)', placeHolder: 'Which backend?' },
   )
   if (!providerPick) {
@@ -52,7 +58,7 @@ export async function configure(): Promise<void> {
     return
   }
 
-  const model = await pickModel(endpoint, settings.model)
+  const model = await pickModel(providerPick.id, endpoint, settings.model)
   if (model === undefined) {
     return
   }
@@ -81,12 +87,16 @@ export async function configure(): Promise<void> {
 }
 
 /** Lists the server's models, falling back to typing when it cannot be reached. */
-async function pickModel(endpoint: string, current: string): Promise<string | undefined> {
+async function pickModel(
+  providerId: ProviderId,
+  endpoint: string,
+  current: string,
+): Promise<string | undefined> {
   const log = getLog()
   let models: { id: string; label: string; detail?: string }[] = []
 
   try {
-    const provider = new OllamaProvider({ endpoint, fetch: globalThis.fetch as FetchLike })
+    const provider = createProvider(providerId, { endpoint, fetch: globalThis.fetch as FetchLike })
     models = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: 'Reading the model list…' },
       () => provider.listModels(),
