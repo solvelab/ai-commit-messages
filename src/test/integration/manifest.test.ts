@@ -177,7 +177,9 @@ suite('settings layout', () => {
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.selectModel'))
       .map(([key]) => key)
-    assert.deepEqual(linked, ['aiCommitMessages.model'])
+    // Two places, one role each: `provider` is the connection hub and lists every setup command;
+    // `model` is where someone already typing a model name looks.
+    assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.model'])
   })
 
   test('never offers a setting that would hold the credential', () => {
