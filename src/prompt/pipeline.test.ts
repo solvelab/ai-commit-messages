@@ -171,3 +171,47 @@ describe('word budget after the retry', () => {
     )
   })
 })
+
+describe('parse antes de heurística (achados da revisão adversarial)', () => {
+  it('aceita uma mensagem cujo conteúdo fala de <think>', async () => {
+    // Exatamente o caso deste repositório: um commit sobre suprimir o traço de raciocínio.
+    const reply = JSON.stringify({
+      type: 'fix',
+      subject: 'suprimir a tag <think> da resposta',
+      body: ['ajustar parser'],
+    })
+    const provider = fakeProvider([reply])
+    const outcome = await generateMessage(provider, FILES, {
+      model: 'm',
+      sanitize: raw => raw.replace(/<think>[\s\S]*?<\/think>/g, ''),
+    })
+    expect(outcome.retried).toBe(false)
+    expect(outcome.message).toContain('suprimir a tag <think> da resposta')
+  })
+
+  it('ainda limpa o traço quando ele está de fato em volta do JSON', async () => {
+    const good = JSON.stringify({ type: 'feat', subject: 'algo', body: [] })
+    const provider = fakeProvider([`<think>deixa eu ver</think>\n${good}`])
+    const outcome = await generateMessage(provider, FILES, {
+      model: 'm',
+      sanitize: raw => raw.replace(/<think>[\s\S]*?<\/think>/g, ''),
+    })
+    expect(outcome.message).toContain('feat: algo')
+  })
+})
+
+describe('extractJson não desiste no primeiro objeto', () => {
+  it('acha o JSON que vem depois de um trecho de código', () => {
+    const raw = 'A mudança adiciona { timeout: 30 } à config.\n{"type":"feat","subject":"x","body":[]}'
+    expect(extractJson(raw)).toMatchObject({ type: 'feat' })
+  })
+
+  it('cai para o texto bruto quando o conteúdo do fence não parseia', () => {
+    const raw = '```\nnão é json\n```\n{"type":"fix","subject":"y","body":[]}'
+    expect(extractJson(raw)).toMatchObject({ type: 'fix' })
+  })
+
+  it('continua devolvendo undefined quando não há objeto nenhum', () => {
+    expect(extractJson('{ quebrado sem fechar')).toBeUndefined()
+  })
+})
