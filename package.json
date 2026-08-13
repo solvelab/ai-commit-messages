@@ -57,7 +57,9 @@
   },
   "homepage": "https://github.com/solvelab/ai-commit-messages#readme",
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "extensionDependencies": [
     "vscode.git"
   ],

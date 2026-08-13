@@ -108,19 +108,28 @@ function update(key: string, value: unknown, target: vscode.ConfigurationTarget)
  * Waits for the change to reach the extension host, then compares.
  *
  * `update` resolving does not mean this side has applied it, so the read has to wait for the event.
- * The timeout is a floor, not a guess about speed: a value that is already correct fires no event.
+ * The timeouts are floors, not guesses about speed: a value that is already correct fires no event
+ * at all, so every attempt has to fall through to a read.
  */
 async function took<T>(key: string, wanted: T): Promise<boolean> {
-  await settled(key)
-  return vscode.workspace.getConfiguration(CONFIG_SECTION).get<T>(key) === wanted
+  // Up to about two seconds in total: a remote window writes the settings file on the other side of
+  // the connection, and declaring the write lost too early triggers the delete-and-rewrite for
+  // nothing.
+  for (const wait of [150, 350, 500, 1000]) {
+    await settled(key, wait)
+    if (vscode.workspace.getConfiguration(CONFIG_SECTION).get<T>(key) === wanted) {
+      return true
+    }
+  }
+  return false
 }
 
-function settled(key: string): Promise<void> {
+function settled(key: string, timeoutMs: number): Promise<void> {
   return new Promise(resolve => {
     const timer = setTimeout(() => {
       subscription.dispose()
       resolve()
-    }, 300)
+    }, timeoutMs)
     const subscription = vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration(`${CONFIG_SECTION}.${key}`)) {
         clearTimeout(timer)
