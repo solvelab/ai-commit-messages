@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/solvelab/ai-commit-messages/compare/v1.6.0...v1.7.0) (2026-08-13)
+
+
+### Features
+
+* **settings:** tornar a API key óbvia e reduzir a autenticação a um campo ([#62](https://github.com/solvelab/ai-commit-messages/issues/62)) ([32c1740](https://github.com/solvelab/ai-commit-messages/commit/32c17407e11aa970a974821f58d6d552af6b544d)), closes [#61](https://github.com/solvelab/ai-commit-messages/issues/61)
+
 # [1.6.0](https://github.com/solvelab/ai-commit-messages/compare/v1.5.0...v1.6.0) (2026-08-13)
 
 
