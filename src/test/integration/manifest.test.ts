@@ -136,8 +136,10 @@ suite('settings layout', () => {
     const provider = configuration()
       .flatMap(node => Object.entries(node.properties))
       .find(([key]) => key === 'aiCommitMessages.provider')?.[1]
-    assert.ok(provider?.markdownDescription?.includes('command:aiCommitMessages.setEndpoint'))
-    assert.ok(!provider.markdownDescription?.includes('endpoint below'))
+    assert.ok(provider, 'aiCommitMessages.provider disappeared')
+    const description = provider.markdownDescription ?? ''
+    assert.ok(description.includes('command:aiCommitMessages.setEndpoint'))
+    assert.ok(!description.includes('endpoint below'))
   })
 
   // Three names for one action: the link said "API key", the palette said "token", and the input
