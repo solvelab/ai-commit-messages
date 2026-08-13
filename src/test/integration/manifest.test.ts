@@ -40,6 +40,9 @@ suite('settings layout', () => {
       'aiCommitMessages.endpoint',
       'aiCommitMessages.model',
       'aiCommitMessages.timeoutMs',
+      'aiCommitMessages.authHeader',
+      'aiCommitMessages.authScheme',
+      'aiCommitMessages.headers',
     ])
   })
 
@@ -64,10 +67,13 @@ suite('settings layout', () => {
       'maxBodyWords',
       'temperature',
       'timeoutMs',
+      'authHeader',
+      'authScheme',
+      'headers',
     ]) {
       assert.ok(keys.includes(`aiCommitMessages.${key}`), `aiCommitMessages.${key} disappeared`)
     }
-    assert.equal(keys.length, 9)
+    assert.equal(keys.length, 12)
   })
 
   test('only the endpoint stays machine-scoped', () => {

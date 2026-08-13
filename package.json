@@ -164,21 +164,21 @@
           "aiCommitMessages.authHeader": {
             "type": "string",
             "default": "Authorization",
-            "scope": "machine",
+            "scope": "window",
             "order": 5,
             "markdownDescription": "Header carrying the credential. Change it for a gateway that expects something else, e.g. `x-api-key`. The credential itself is stored in the secret store, never here — run **AI Commit Messages: Set token**."
           },
           "aiCommitMessages.authScheme": {
             "type": "string",
             "default": "Bearer",
-            "scope": "machine",
+            "scope": "window",
             "order": 6,
             "markdownDescription": "Scheme prefix for the credential. Leave **empty** to send the raw token, which some gateways require."
           },
           "aiCommitMessages.headers": {
             "type": "object",
             "default": {},
-            "scope": "machine",
+            "scope": "window",
             "order": 7,
             "additionalProperties": {
               "type": "string"
