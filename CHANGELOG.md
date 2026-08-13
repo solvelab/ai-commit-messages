@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/solvelab/ai-commit-messages/compare/v1.10.0...v1.11.0) (2026-08-13)
+
+
+### Features
+
+* **settings:** endpoint como campo visível, com confirmação para valor vindo do repositório ([#76](https://github.com/solvelab/ai-commit-messages/issues/76)) ([e25f5ca](https://github.com/solvelab/ai-commit-messages/commit/e25f5cafbbd92ae2d5a1a3795bd79ed7fad3de05)), closes [#75](https://github.com/solvelab/ai-commit-messages/issues/75)
+
 # [1.10.0](https://github.com/solvelab/ai-commit-messages/compare/v1.9.1...v1.10.0) (2026-08-13)
 
 
