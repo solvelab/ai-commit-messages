@@ -43,6 +43,7 @@ suite('settings layout', () => {
       'aiCommitMessages.authHeader',
       'aiCommitMessages.authScheme',
       'aiCommitMessages.headers',
+      'aiCommitMessages.compatPreset',
     ])
   })
 
@@ -70,10 +71,11 @@ suite('settings layout', () => {
       'authHeader',
       'authScheme',
       'headers',
+      'compatPreset',
     ]) {
       assert.ok(keys.includes(`aiCommitMessages.${key}`), `aiCommitMessages.${key} disappeared`)
     }
-    assert.equal(keys.length, 12)
+    assert.equal(keys.length, 13)
   })
 
   test('only the endpoint stays machine-scoped', () => {

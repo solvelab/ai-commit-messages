@@ -34,6 +34,11 @@ Todas verificadas na fonte — quebrar qualquer uma custa retrabalho, não estil
    em `err.cause`, não em `err.message`.
 8. **Nenhuma setting de `apiKey`.** Só `SecretStorage`.
 9. **Emoji vem do código, nunca do modelo.**
+10. **Mexeu em `contributes.configuration` ou em `contributes.commands`? Atualize
+    `src/test/integration/manifest.test.ts` e `activation.test.ts` no mesmo commit.** Eles travam
+    a ordem dos blocos, a contagem de chaves, o escopo `machine` e a lista de comandos — de
+    propósito. A suíte de integração não roda em toda máquina (o Electron trava sob WSLg), então
+    esse esquecimento só aparece no CI.
 
 ## Idioma
 
