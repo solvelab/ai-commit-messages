@@ -39,6 +39,8 @@ suite('settings layout', () => {
       'aiCommitMessages.provider',
       'aiCommitMessages.endpoint',
       'aiCommitMessages.model',
+      'aiCommitMessages.authHeader',
+      'aiCommitMessages.headers',
       'aiCommitMessages.timeoutMs',
     ])
   })
@@ -74,16 +76,32 @@ suite('settings layout', () => {
     assert.equal(keys.length, 13)
   })
 
-  // The two knobs nobody else needs live at the bottom, where expert knobs belong. The pair
-  // `authHeader` + `authScheme` used to sit in Connection and read as "where the key goes" —
-  // it never was, and the key itself has no setting at all.
-  test('keeps the header knobs in Advanced, last', () => {
+  // Both headers describe how the request reaches the server, so they belong next to the provider
+  // and the endpoint. Advanced is for what tunes the output and the diff, nothing else.
+  test('leaves Advanced with the generation knobs only', () => {
     const advanced = configuration().find(n => n.title.endsWith('Advanced'))
     assert.ok(advanced)
     const keys = Object.entries(advanced.properties)
       .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0))
       .map(([key]) => key)
-    assert.deepEqual(keys.slice(-2), ['aiCommitMessages.authHeader', 'aiCommitMessages.headers'])
+    assert.deepEqual(keys, [
+      'aiCommitMessages.temperature',
+      'aiCommitMessages.maxDiffChars',
+      'aiCommitMessages.redactSecrets',
+      'aiCommitMessages.excludeGlobs',
+    ])
+  })
+
+  // A description reading "Advanced." outside the Advanced block lies about where it lives.
+  test('never calls a setting Advanced outside the Advanced block', () => {
+    for (const node of configuration()) {
+      if (node.title.endsWith('Advanced')) {
+        continue
+      }
+      for (const [key, schema] of Object.entries(node.properties)) {
+        assert.ok(!schema.markdownDescription?.startsWith('**Advanced.**'), key)
+      }
+    }
   })
 
   // Verified in settingsTree.ts: descriptions render with `isTrusted: true`, so a command link is

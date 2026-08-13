@@ -196,6 +196,23 @@
             "markdownDescription": "Model to generate with. Must exist on the server.\n\n_A dropdown is not possible here — a setting's list is fixed in the manifest and cannot be filled in at runtime. Use_ **AI Commit Messages: Select model…** _(also the ☰ icon in the Source Control title bar) to pick from the models your backend actually offers._",
             "order": 3
           },
+          "aiCommitMessages.authHeader": {
+            "type": "string",
+            "default": "Authorization: Bearer {token}",
+            "scope": "window",
+            "order": 4,
+            "markdownDescription": "**Optional.** Whole header line that carries the key, with `{token}` where the key goes.\n\nLeave as is for OpenAI, Groq, OpenRouter and Gemini. Change it only for a gateway that expects something else:\n\n- `x-api-key: {token}`\n- `Authorization: {token}` (raw, no scheme)\n\nThe key itself is **never** stored here — use **[Set API key…](command:aiCommitMessages.setToken)**."
+          },
+          "aiCommitMessages.headers": {
+            "type": "object",
+            "default": {},
+            "scope": "window",
+            "order": 5,
+            "additionalProperties": {
+              "type": "string"
+            },
+            "markdownDescription": "**Optional.** Extra headers sent with every request, for gateways that need routing or tenant fields.\n\nNever put the key here — it is plaintext on disk and synced. Use **[Set API key…](command:aiCommitMessages.setToken)**."
+          },
           "aiCommitMessages.timeoutMs": {
             "type": "number",
             "default": 60000,
@@ -203,7 +220,7 @@
             "maximum": 600000,
             "scope": "window",
             "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s.",
-            "order": 4
+            "order": 6
           }
         }
       },
@@ -325,23 +342,6 @@
             "scope": "window",
             "order": 4,
             "markdownDescription": "Files matching these globs contribute only their header to the prompt, not their contents. A lockfile must not push the actual change out of the budget — but the model still learns it changed. Supports `*`, `**` and `?`."
-          },
-          "aiCommitMessages.authHeader": {
-            "type": "string",
-            "default": "Authorization: Bearer {token}",
-            "scope": "window",
-            "order": 5,
-            "markdownDescription": "**Advanced.** Whole header line that carries the key, with `{token}` where the key goes.\n\nLeave as is for OpenAI, Groq, OpenRouter and Gemini. Change it only for a gateway that expects something else:\n\n- `x-api-key: {token}`\n- `Authorization: {token}` (raw, no scheme)\n\nThe key itself is **never** stored here — use **[Set API key…](command:aiCommitMessages.setToken)**."
-          },
-          "aiCommitMessages.headers": {
-            "type": "object",
-            "default": {},
-            "scope": "window",
-            "order": 6,
-            "additionalProperties": {
-              "type": "string"
-            },
-            "markdownDescription": "**Advanced.** Extra headers sent with every request, for gateways that need routing or tenant fields.\n\nNever put the key here — it is plaintext on disk and synced. Use **[Set API key…](command:aiCommitMessages.setToken)**."
           }
         }
       }
