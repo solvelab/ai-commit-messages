@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/solvelab/ai-commit-messages/compare/v1.3.0...v1.4.0) (2026-08-13)
+
+
+### Features
+
+* **diagnose:** comando de diagnóstico de conexão ([d8c223e](https://github.com/solvelab/ai-commit-messages/commit/d8c223ea0e5557136be0e7b85248b8ce8019b7fb))
+
 # [1.3.0](https://github.com/solvelab/ai-commit-messages/compare/v1.2.0...v1.3.0) (2026-08-13)
 
 
