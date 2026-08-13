@@ -1,23 +1,40 @@
 import * as vscode from 'vscode'
 
-import { OUTPUT_CHANNEL_NAME } from './meta.js'
+import { generateCommitMessage } from './commands/generate.js'
+import { getGitApi } from './git/api.js'
+import { createLog, disposeLog } from './log.js'
+import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
 
-let log: vscode.LogOutputChannel | undefined
+export const GENERATE_COMMAND = `${CONFIG_SECTION}.generate`
 
-/** The extension's log channel. Detail goes here; notifications stay one line. */
-export function getLog(): vscode.LogOutputChannel {
-  if (!log) {
-    throw new Error('Log channel requested before activation')
-  }
-  return log
-}
-
-export function activate(context: vscode.ExtensionContext): void {
-  log = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME, { log: true })
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const log = createLog()
   context.subscriptions.push(log)
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
+  )
+
+  // Also offer the command in the commit button's dropdown. Stable API, unlike `scm/inputBox`.
+  const git = await getGitApi()
+  if (git) {
+    context.subscriptions.push(
+      git.registerPostCommitCommandsProvider({
+        getCommands: () => [
+          {
+            command: GENERATE_COMMAND,
+            title: 'Generate Commit Message',
+          },
+        ],
+      }),
+    )
+  } else {
+    log.warn('Git extension unavailable — post-commit command not registered')
+  }
+
   log.info(`${OUTPUT_CHANNEL_NAME} activated`)
 }
 
 export function deactivate(): void {
-  log = undefined
+  disposeLog()
 }

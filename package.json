@@ -61,7 +61,33 @@
   "extensionDependencies": [
     "vscode.git"
   ],
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCommitMessages.generate",
+        "title": "Generate Commit Message",
+        "category": "AI Commit Messages",
+        "icon": "$(sparkle)"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "aiCommitMessages.generate",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "aiCommitMessages.generate",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "when": "!terminalFocus"
+      }
+    ]
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
