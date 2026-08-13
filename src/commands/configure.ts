@@ -75,7 +75,7 @@ export async function configure(): Promise<void> {
     prompt: 'Base URL of the model server. A full endpoint is trimmed automatically.',
     value: suggestedEndpoint,
     placeHolder: 'http://192.168.15.6:11434',
-    validateInput: validateEndpointInput,
+    validateInput: value => validateEndpointInput(value, providerPick.id),
     ignoreFocusOut: true,
   })
   if (endpoint === undefined) {
