@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
+import { collectChanges } from '../git/collect.js'
 import { getGitApi } from '../git/api.js'
+import { createCollectHost } from '../git/collectHost.js'
 import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
 import { getLog } from '../log.js'
@@ -40,12 +42,38 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
       if (token.isCancellationRequested) {
         return
       }
-      // Refresh before reading state — the git extension caches it.
+
+      // The git extension caches state; refresh before reading it.
       await repository.status()
-      // Message generation lands in #7 (diff) → #8 (provider) → #9 (format).
-      log.info('generation pipeline not wired yet')
+      const changes = await collectChanges(createCollectHost(repository))
+
+      for (const skipped of changes.skipped) {
+        log.debug(`skipped ${skipped.path}: ${skipped.reason}`)
+      }
+
+      if (changes.files.length === 0) {
+        void vscode.window.showErrorMessage(
+          'Nothing to describe: no staged or unstaged changes in this repository.',
+        )
+        return
+      }
+
+      if (changes.source === 'worktree') {
+        log.info('nothing staged — describing working tree changes instead')
+        void vscode.window.showWarningMessage(
+          'Nothing is staged, so the working tree changes were used instead.',
+        )
+      }
+
+      log.info(
+        `collected ${changes.files.length} file(s) from ${changes.source}` +
+          `${changes.usedWholeDiffFallback ? ' (whole-diff fallback)' : ''}, ` +
+          `${changes.skipped.length} skipped`,
+      )
+
+      // Sending it to a model lands in #8; formatting in #9.
       void vscode.window.showInformationMessage(
-        'AI Commit Messages is not wired to a model yet — see issue #8.',
+        `AI Commit Messages: ${changes.files.length} file(s) ready, but no model is wired yet — see issue #8.`,
       )
     },
   )
