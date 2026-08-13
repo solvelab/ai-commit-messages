@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/solvelab/ai-commit-messages/compare/v1.9.0...v1.9.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **config:** nenhuma gravação de setting é anunciada sem ser lida de volta ([#72](https://github.com/solvelab/ai-commit-messages/issues/72)) ([83c62d7](https://github.com/solvelab/ai-commit-messages/commit/83c62d724d6b140a4aeb386b6dea1a2404f958f6)), closes [#71](https://github.com/solvelab/ai-commit-messages/issues/71)
+
 # [1.9.0](https://github.com/solvelab/ai-commit-messages/compare/v1.8.0...v1.9.0) (2026-08-13)
 
 
