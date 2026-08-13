@@ -75,3 +75,35 @@ export function validateEndpointInput(
   }
   return undefined
 }
+
+/**
+ * Everything the wizard must hand to `createProvider`.
+ *
+ * Extracted so the omission that caused the bug is testable: the wizard used to build the provider
+ * without `auth` and `headers`, so a gateway expecting `x-api-key` received `Authorization: Bearer`
+ * and refused — and the 401 was swallowed into a log line.
+ */
+export interface WizardProviderContext {
+  readonly endpoint: string
+  readonly presetId?: string
+  readonly token?: string
+  readonly headers: Record<string, string>
+  readonly auth: { header: string; scheme: string }
+}
+
+export function wizardProviderContext(input: {
+  endpoint: string
+  presetId?: string
+  token?: string
+  authHeader: string
+  authScheme: string
+  headers: Record<string, string>
+}): WizardProviderContext {
+  return {
+    endpoint: input.endpoint,
+    ...(input.presetId ? { presetId: input.presetId } : {}),
+    ...(input.token ? { token: input.token } : {}),
+    headers: input.headers,
+    auth: { header: input.authHeader, scheme: input.authScheme },
+  }
+}
