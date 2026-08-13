@@ -1,3 +1,4 @@
+import { buildHeaders, type AuthConfig } from './auth.js'
 import {
   ProviderError,
   type CommitProvider,
@@ -72,7 +73,11 @@ interface OllamaChatResponse {
 export interface OllamaProviderOptions {
   readonly endpoint: string
   readonly fetch: FetchLike
+  /** Extra non-sensitive headers. */
   readonly headers?: Record<string, string>
+  /** Optional credential, for an Ollama behind a gateway or for Ollama Cloud. */
+  readonly token?: string
+  readonly auth?: AuthConfig
 }
 
 export class OllamaProvider implements CommitProvider {
@@ -80,11 +85,19 @@ export class OllamaProvider implements CommitProvider {
   private readonly endpoint: string
   private readonly fetch: FetchLike
   private readonly headers: Record<string, string>
+  /** Whether a credential is attached. Logged instead of the credential itself. */
+  readonly authenticated: boolean
 
   constructor(options: OllamaProviderOptions) {
     this.endpoint = normalizeEndpoint(options.endpoint)
     this.fetch = options.fetch
-    this.headers = { 'content-type': 'application/json', ...options.headers }
+    const built = buildHeaders({
+      ...(options.headers ? { extra: options.headers } : {}),
+      ...(options.token ? { token: options.token } : {}),
+      ...(options.auth ? { auth: options.auth } : {}),
+    })
+    this.headers = built.headers
+    this.authenticated = built.authenticated
   }
 
   /**
@@ -120,6 +133,13 @@ export class OllamaProvider implements CommitProvider {
       const detail = extractError(raw) ?? `${response.status} ${response.statusText}`
       if (response.status === 404) {
         throw new ProviderError('model-not-found', detail)
+      }
+      if (response.status === 401 || response.status === 403) {
+        // Almost always a gateway in front of Ollama, since Ollama itself has no auth.
+        throw new ProviderError(
+          'unauthorized',
+          `${this.endpoint} rejected the credential (HTTP ${response.status}).`,
+        )
       }
       if (isStructuredOutputRefusal(detail)) {
         throw new ProviderError('structured-output-unsupported', detail)

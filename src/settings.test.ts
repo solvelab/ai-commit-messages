@@ -113,3 +113,35 @@ describe('diffBudgetChars', () => {
     ).toBe(4000)
   })
 })
+
+describe('auth settings', () => {
+  it('defaults to Authorization + Bearer', () => {
+    const { settings } = readSettings({})
+    expect(settings.authHeader).toBe('Authorization')
+    expect(settings.authScheme).toBe('Bearer')
+    expect(settings.headers).toEqual({})
+  })
+
+  it('keeps an empty scheme, which means "send the raw token"', () => {
+    // `str()` would turn blank into the default; here blank is a meaningful choice.
+    expect(readSettings({ authScheme: '' }).settings.authScheme).toBe('')
+  })
+
+  it('accepts a custom header name', () => {
+    expect(readSettings({ authHeader: 'x-api-key' }).settings.authHeader).toBe('x-api-key')
+  })
+
+  it('reads extra headers and drops non-string values with a report', () => {
+    const { settings, problems } = readSettings({
+      headers: { 'X-Title': 'acm', 'X-Bad': 42, '  ': 'x' },
+    })
+    expect(settings.headers).toEqual({ 'X-Title': 'acm' })
+    expect(problems.filter(p => p.key === 'headers')).toHaveLength(2)
+  })
+
+  it('rejects headers that are not an object', () => {
+    const { settings, problems } = readSettings({ headers: ['nope'] })
+    expect(settings.headers).toEqual({})
+    expect(problems.map(p => p.key)).toContain('headers')
+  })
+})

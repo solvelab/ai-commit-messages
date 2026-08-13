@@ -1,3 +1,4 @@
+import type { AuthConfig } from './auth.js'
 import { OllamaProvider } from './ollama.js'
 import { ProviderError, type CommitProvider, type FetchLike } from './types.js'
 import { PROVIDERS, type ProviderId } from '../settings.js'
@@ -17,6 +18,9 @@ export interface ProviderContext {
   readonly endpoint: string
   readonly fetch: FetchLike
   readonly headers?: Record<string, string>
+  /** Optional credential — a gateway in front of the server, or a hosted endpoint. */
+  readonly token?: string
+  readonly auth?: AuthConfig
 }
 
 /** Backends that are actually implemented. Anything else in the enum is not yet available. */
@@ -33,6 +37,8 @@ export function createProvider(id: ProviderId, context: ProviderContext): Commit
         endpoint: context.endpoint,
         fetch: context.fetch,
         ...(context.headers ? { headers: context.headers } : {}),
+        ...(context.token ? { token: context.token } : {}),
+        ...(context.auth ? { auth: context.auth } : {}),
       })
     case 'openai-compat':
       throw new ProviderError(

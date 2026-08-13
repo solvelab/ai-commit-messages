@@ -8,6 +8,7 @@ import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
 import { getLog } from '../log.js'
 import { withAbort } from '../net.js'
+import { readToken } from './secrets.js'
 import { createProvider } from '../providers/registry.js'
 import { ProviderError, type FetchLike } from '../providers/types.js'
 import { generateMessage, PipelineError } from '../prompt/pipeline.js'
@@ -68,11 +69,17 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
 
       // `globalThis.fetch` is the one the extension host patched for proxy and certificates.
       // Deliberate: fighting that patch is how LAN calls break in corporate setups.
+      // Optional everywhere: no token means the request goes out exactly as before, which is the
+      // common local case. A token appears when a gateway sits in front of the server.
+      const credential = await readToken(settings.provider)
       let provider
       try {
         provider = createProvider(settings.provider, {
           endpoint: settings.endpoint,
           fetch: globalThis.fetch as FetchLike,
+          headers: settings.headers,
+          ...(credential ? { token: credential } : {}),
+          auth: { header: settings.authHeader, scheme: settings.authScheme },
         })
       } catch (error) {
         reportFailure(error, settings)
@@ -169,9 +176,17 @@ function reportFailure(error: unknown, settings: Settings): void {
     // `Configure…` comes first: with a remote session the endpoint setting is not in the User tab,
     // so pointing at plain settings is the least useful thing to offer.
     void vscode.window
-      .showErrorMessage(providerMessage(error, settings), 'Configure…', 'Show Log', 'Open Settings')
+      .showErrorMessage(
+        providerMessage(error, settings),
+        ...(error.code === 'unauthorized' ? ['Set token…'] : []),
+        'Configure…',
+        'Show Log',
+        'Open Settings',
+      )
       .then(choice => {
-        if (choice === 'Configure…') {
+        if (choice === 'Set token…') {
+          void vscode.commands.executeCommand('aiCommitMessages.setToken')
+        } else if (choice === 'Configure…') {
           void vscode.commands.executeCommand('aiCommitMessages.configure')
         } else if (choice === 'Show Log') {
           log.show(true)
@@ -203,6 +218,8 @@ function providerMessage(error: ProviderError, settings: Settings): string {
   switch (error.code) {
     case 'model-not-found':
       return `The model "${settings.model}" is not installed on ${settings.endpoint}.`
+    case 'unauthorized':
+      return `${settings.endpoint} rejected the credential. A gateway in front of the server usually means a token is required.`
     case 'network':
       return error.message
     case 'malformed-response':

@@ -17,6 +17,9 @@ export function currentSettings(scope?: vscode.Uri): ReadResult {
     'maxBodyWords',
     'temperature',
     'timeoutMs',
+    'authHeader',
+    'authScheme',
+    'headers',
   ]) {
     raw[key] = configuration.get(key)
   }

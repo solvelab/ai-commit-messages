@@ -51,6 +51,7 @@ export type ProviderErrorCode =
   | 'http'
   | 'malformed-response'
   | 'model-not-found'
+  | 'unauthorized'
   | 'structured-output-unsupported'
   | 'aborted'
 

@@ -286,3 +286,47 @@ describe('HTTP methods (regression: caught only against a real server)', () => {
     expect(JSON.parse(init.body!)).toEqual({ model: 'qwen3:8b' })
   })
 })
+
+describe('optional credential (gateway in front of Ollama)', () => {
+  function headersOf(fetchImpl: FetchLike) {
+    return (
+      fetchImpl as unknown as { mock: { calls: [string, { headers: Record<string, string> }][] } }
+    ).mock.calls[0][1].headers
+  }
+
+  it('sends no auth header when there is no token — plain local Ollama', async () => {
+    const fetchImpl = jsonFetch({ models: [] })
+    await new OllamaProvider({ endpoint: 'http://h:11434', fetch: fetchImpl }).listModels()
+    expect(headersOf(fetchImpl).Authorization).toBeUndefined()
+  })
+
+  it('sends Bearer when a token is configured', async () => {
+    const fetchImpl = jsonFetch({ models: [] })
+    await new OllamaProvider({
+      endpoint: 'http://gw:11434',
+      fetch: fetchImpl,
+      token: 'abc123',
+    }).listModels()
+    expect(headersOf(fetchImpl).Authorization).toBe('Bearer abc123')
+  })
+
+  it('honours a gateway that wants its own header and no scheme', async () => {
+    const fetchImpl = jsonFetch({ models: [] })
+    await new OllamaProvider({
+      endpoint: 'http://gw:11434',
+      fetch: fetchImpl,
+      token: 'abc123',
+      auth: { header: 'x-api-key', scheme: '' },
+    }).listModels()
+    expect(headersOf(fetchImpl)['x-api-key']).toBe('abc123')
+    expect(headersOf(fetchImpl).Authorization).toBeUndefined()
+  })
+
+  it('reports 401 and 403 as unauthorized, not as a generic HTTP error', async () => {
+    for (const status of [401, 403]) {
+      await expect(
+        provider(jsonFetch({ error: 'denied' }, status)).listModels(),
+      ).rejects.toMatchObject({ code: 'unauthorized' })
+    }
+  })
+})

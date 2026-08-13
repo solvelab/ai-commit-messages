@@ -26,6 +26,12 @@ export interface Settings {
   readonly maxBodyWords: number
   readonly temperature: number
   readonly timeoutMs: number
+  /** Header carrying the credential, for gateways that do not use Authorization. */
+  readonly authHeader: string
+  /** Scheme prefix. Empty sends the raw token. */
+  readonly authScheme: string
+  /** Extra non-sensitive headers. */
+  readonly headers: Record<string, string>
 }
 
 export const DEFAULTS: Settings = {
@@ -39,6 +45,9 @@ export const DEFAULTS: Settings = {
   maxBodyWords: DEFAULT_MAX_BODY_WORDS,
   temperature: 0,
   timeoutMs: DEFAULT_TIMEOUT_MS,
+  authHeader: 'Authorization',
+  authScheme: 'Bearer',
+  headers: {},
 }
 
 export interface SettingsProblem {
@@ -98,6 +107,25 @@ function num(
   return clamped
 }
 
+function readHeaders(raw: unknown, problems: SettingsProblem[]): Record<string, string> {
+  if (raw === undefined || raw === null) {
+    return {}
+  }
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    problems.push({ key: 'headers', message: 'headers must be an object of string values.' })
+    return {}
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'string' && key.trim()) {
+      out[key.trim()] = value
+    } else {
+      problems.push({ key: 'headers', message: `header "${key}" was ignored: values must be strings.` })
+    }
+  }
+  return out
+}
+
 function str(raw: unknown, fallback: string): string {
   return typeof raw === 'string' && raw.trim() ? raw.trim() : fallback
 }
@@ -130,6 +158,10 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       maxBodyWords: num(raw.maxBodyWords, DEFAULTS.maxBodyWords, 3, 40, 'maxBodyWords', problems),
       temperature: num(raw.temperature, DEFAULTS.temperature, 0, 1, 'temperature', problems),
       timeoutMs: num(raw.timeoutMs, DEFAULTS.timeoutMs, 1_000, 600_000, 'timeoutMs', problems),
+      authHeader: str(raw.authHeader, DEFAULTS.authHeader),
+      // Empty is meaningful here (raw token), so `str` with its blank-to-default rule is wrong.
+      authScheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULTS.authScheme,
+      headers: readHeaders(raw.headers, problems),
     },
     problems,
   }

@@ -2,8 +2,10 @@ import * as vscode from 'vscode'
 
 import { generateCommitMessage } from './commands/generate.js'
 import { configure } from './commands/configure.js'
+import { currentSettings } from './config.js'
 import { insertDefaultPrompt } from './commands/insertPrompt.js'
 import { migrateLegacySettings, offerMigrationOnce } from './commands/migrate.js'
+import { clearToken, initSecrets, setToken } from './commands/secrets.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog } from './log.js'
 import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
@@ -16,12 +18,21 @@ export const INSERT_PROMPT_COMMAND = `${CONFIG_SECTION}.insertDefaultPrompt`
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const log = createLog()
   context.subscriptions.push(log)
+  initSecrets(context)
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
     vscode.commands.registerCommand(MIGRATE_COMMAND, () => migrateLegacySettings(true)),
     vscode.commands.registerCommand(CONFIGURE_COMMAND, configure),
     vscode.commands.registerCommand(INSERT_PROMPT_COMMAND, insertDefaultPrompt),
+    vscode.commands.registerCommand(`${CONFIG_SECTION}.setToken`, async () => {
+      const { settings } = currentSettings()
+      await setToken(settings.provider)
+    }),
+    vscode.commands.registerCommand(`${CONFIG_SECTION}.clearToken`, async () => {
+      const { settings } = currentSettings()
+      await clearToken(settings.provider)
+    }),
   )
 
   // Also offer the command in the commit button's dropdown. Stable API, unlike `scm/inputBox`.

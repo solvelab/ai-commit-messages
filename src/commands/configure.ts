@@ -5,6 +5,7 @@ import { planConfiguration, validateEndpointInput, type ConfigureAnswers } from 
 import { getLog } from '../log.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { createProvider, isImplemented } from '../providers/registry.js'
+import { readToken } from './secrets.js'
 import type { FetchLike } from '../providers/types.js'
 import { PROVIDERS, type ProviderId } from '../settings.js'
 
@@ -96,7 +97,12 @@ async function pickModel(
   let models: { id: string; label: string; detail?: string }[] = []
 
   try {
-    const provider = createProvider(providerId, { endpoint, fetch: globalThis.fetch as FetchLike })
+    const token = await readToken(providerId)
+    const provider = createProvider(providerId, {
+      endpoint,
+      fetch: globalThis.fetch as FetchLike,
+      ...(token ? { token } : {}),
+    })
     models = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: 'Reading the model list…' },
       () => provider.listModels(),

@@ -84,6 +84,16 @@
         "command": "aiCommitMessages.insertDefaultPrompt",
         "title": "Insert the default prompt into settings",
         "category": "AI Commit Messages"
+      },
+      {
+        "command": "aiCommitMessages.setToken",
+        "title": "Set token…",
+        "category": "AI Commit Messages"
+      },
+      {
+        "command": "aiCommitMessages.clearToken",
+        "title": "Clear token",
+        "category": "AI Commit Messages"
       }
     ],
     "menus": {
@@ -150,6 +160,30 @@
             "scope": "window",
             "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s.",
             "order": 4
+          },
+          "aiCommitMessages.authHeader": {
+            "type": "string",
+            "default": "Authorization",
+            "scope": "machine",
+            "order": 5,
+            "markdownDescription": "Header carrying the credential. Change it for a gateway that expects something else, e.g. `x-api-key`. The credential itself is stored in the secret store, never here — run **AI Commit Messages: Set token**."
+          },
+          "aiCommitMessages.authScheme": {
+            "type": "string",
+            "default": "Bearer",
+            "scope": "machine",
+            "order": 6,
+            "markdownDescription": "Scheme prefix for the credential. Leave **empty** to send the raw token, which some gateways require."
+          },
+          "aiCommitMessages.headers": {
+            "type": "object",
+            "default": {},
+            "scope": "machine",
+            "order": 7,
+            "additionalProperties": {
+              "type": "string"
+            },
+            "markdownDescription": "Extra HTTP headers sent with every request. For **non-sensitive** values only — put credentials in the secret store."
           }
         }
       },
