@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/solvelab/ai-commit-messages/compare/v1.4.7...v1.5.0) (2026-08-13)
+
+
+### Features
+
+* **settings:** uma lista só de backend, pelos nomes de produto ([f4c4efe](https://github.com/solvelab/ai-commit-messages/commit/f4c4efeec4604e2217c3040ebb2603c95ae42e9e))
+
 ## [1.4.7](https://github.com/solvelab/ai-commit-messages/compare/v1.4.6...v1.4.7) (2026-08-13)
 
 
