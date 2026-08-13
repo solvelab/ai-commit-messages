@@ -1,3 +1,10 @@
+## [1.4.6](https://github.com/solvelab/ai-commit-messages/compare/v1.4.5...v1.4.6) (2026-08-13)
+
+
+### Bug Fixes
+
+* **configure:** respeitar autenticação, permitir cancelar e não engolir o 401 ([000b7bd](https://github.com/solvelab/ai-commit-messages/commit/000b7bdd1036d34c54c6c2deaaefa5fc43deb8c4))
+
 ## [1.4.5](https://github.com/solvelab/ai-commit-messages/compare/v1.4.4...v1.4.5) (2026-08-13)
 
 
