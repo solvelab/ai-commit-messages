@@ -1,0 +1,95 @@
+{
+  "name": "ai-commit-messages",
+  "displayName": "AI Commit Messages",
+  "description": "Generate git commit messages with a local or self-hosted LLM — Ollama and any OpenAI-compatible endpoint. Conventional Commits + gitmoji, offline, no telemetry.",
+  "version": "0.0.0",
+  "publisher": "solvelab",
+  "private": true,
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#161922",
+    "theme": "dark"
+  },
+  "categories": [
+    "SCM Providers",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "ai commit",
+    "commit message",
+    "ai commit message",
+    "commit generator",
+    "conventional commits",
+    "gitmoji",
+    "git",
+    "scm",
+    "source control",
+    "ollama",
+    "local llm",
+    "llm",
+    "openai compatible",
+    "lm studio",
+    "openrouter",
+    "groq",
+    "llama.cpp",
+    "vllm",
+    "offline",
+    "privacy",
+    "self-hosted",
+    "byok",
+    "qwen",
+    "generate commit message"
+  ],
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "author": {
+    "name": "didevlab",
+    "url": "https://github.com/didevlab"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solvelab/ai-commit-messages.git"
+  },
+  "bugs": {
+    "url": "https://github.com/solvelab/ai-commit-messages/issues"
+  },
+  "homepage": "https://github.com/solvelab/ai-commit-messages#readme",
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "contributes": {},
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint",
+    "pretest": "npm run compile-tests",
+    "test": "vscode-test",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "vsix": "npx --yes @vscode/vsce package --out ai-commit-messages.vsix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.13.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0",
+    "vitest": "^4.1.10"
+  }
+}
