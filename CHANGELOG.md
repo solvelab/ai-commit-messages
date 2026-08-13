@@ -1,3 +1,10 @@
+## [1.4.4](https://github.com/solvelab/ai-commit-messages/compare/v1.4.3...v1.4.4) (2026-08-13)
+
+
+### Bug Fixes
+
+* **prompt:** tentar o parse antes de aplicar heurística de texto ([eff3332](https://github.com/solvelab/ai-commit-messages/commit/eff3332d5809b9dc26502865eb29475144e2e6f0))
+
 ## [1.4.3](https://github.com/solvelab/ai-commit-messages/compare/v1.4.2...v1.4.3) (2026-08-13)
 
 
