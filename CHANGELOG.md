@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/solvelab/ai-commit-messages/compare/v1.4.0...v1.4.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **settings:** normalizar o endpoint conforme o dialeto do provider ([e8fdaa4](https://github.com/solvelab/ai-commit-messages/commit/e8fdaa4bb3c0f08293bd158b8d30d80e71f04857))
+
 # [1.4.0](https://github.com/solvelab/ai-commit-messages/compare/v1.3.0...v1.4.0) (2026-08-13)
 
 
