@@ -47,6 +47,7 @@ suite('activation', () => {
       'aiCommitMessages.setToken',
       'aiCommitMessages.clearToken',
       'aiCommitMessages.diagnose',
+      'aiCommitMessages.selectModel',
     ])
   })
 
@@ -55,7 +56,7 @@ suite('activation', () => {
     const menu = extension?.packageJSON.contributes?.menus?.['scm/title'] as
       | { command: string; when: string; group: string }[]
       | undefined
-    assert.ok(menu && menu.length === 2, 'expected the generate and configure contributions')
+    assert.ok(menu && menu.length === 3, 'expected generate, configure and select-model')
     assert.equal(menu[0].command, GENERATE_COMMAND)
     assert.equal(menu[0].when, 'scmProvider == git')
     assert.equal(menu[0].group, 'navigation')

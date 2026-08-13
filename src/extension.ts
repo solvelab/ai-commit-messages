@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { generateCommitMessage } from './commands/generate.js'
 import { configure } from './commands/configure.js'
 import { diagnose } from './commands/diagnose.js'
+import { initModelCache, selectModel } from './commands/selectModel.js'
 import { currentSettings } from './config.js'
 import { insertDefaultPrompt } from './commands/insertPrompt.js'
 import { migrateLegacySettings, offerMigrationOnce } from './commands/migrate.js'
@@ -20,12 +21,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const log = createLog()
   context.subscriptions.push(log)
   initSecrets(context)
+  initModelCache(context)
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
     vscode.commands.registerCommand(MIGRATE_COMMAND, () => migrateLegacySettings(true)),
     vscode.commands.registerCommand(CONFIGURE_COMMAND, configure),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.diagnose`, diagnose),
+    vscode.commands.registerCommand(`${CONFIG_SECTION}.selectModel`, selectModel),
     vscode.commands.registerCommand(INSERT_PROMPT_COMMAND, insertDefaultPrompt),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.setToken`, async () => {
       const { settings } = currentSettings()
