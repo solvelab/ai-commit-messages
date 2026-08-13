@@ -18,7 +18,6 @@ export function currentSettings(scope?: vscode.Uri): ReadResult {
     'temperature',
     'timeoutMs',
     'authHeader',
-    'authScheme',
     'headers',
     'compatPreset',
     'redactSecrets',

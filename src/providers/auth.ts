@@ -23,6 +23,61 @@ export interface AuthConfig {
 
 export const DEFAULT_AUTH: AuthConfig = { header: 'Authorization', scheme: 'Bearer' }
 
+/** Placeholder the template must contain; without it the credential would never be sent. */
+export const TOKEN_PLACEHOLDER = '{token}'
+
+export const DEFAULT_AUTH_TEMPLATE = `Authorization: Bearer ${TOKEN_PLACEHOLDER}`
+
+export interface ParsedTemplate {
+  readonly auth: AuthConfig
+  /** Set when the template was unusable and the default was used instead. */
+  readonly problem?: string
+}
+
+/**
+ * Reads a whole header line as one value: `Authorization: Bearer {token}`.
+ *
+ * One field instead of two. Splitting the header name from the scheme made the settings page show
+ * two boxes for a single decision — the same mistake as having two provider lists — and neither box
+ * hinted at where the key itself goes.
+ *
+ * A template missing the placeholder is refused rather than accepted: a header built without the
+ * credential fails at the server, far from the cause.
+ */
+export function parseAuthTemplate(raw: string): ParsedTemplate {
+  const value = raw.trim()
+  if (!value) {
+    return { auth: DEFAULT_AUTH }
+  }
+
+  const separator = value.indexOf(':')
+  if (separator <= 0) {
+    return {
+      auth: DEFAULT_AUTH,
+      problem: `"${value}" is not a header line. Expected something like ${DEFAULT_AUTH_TEMPLATE}.`,
+    }
+  }
+
+  const header = value.slice(0, separator).trim()
+  const rest = value.slice(separator + 1).trim()
+
+  if (!rest.includes(TOKEN_PLACEHOLDER)) {
+    return {
+      auth: DEFAULT_AUTH,
+      problem: `The header template must contain ${TOKEN_PLACEHOLDER}; otherwise the key is never sent.`,
+    }
+  }
+
+  const scheme = rest.replace(TOKEN_PLACEHOLDER, '').trim()
+  return { auth: { header, scheme } }
+}
+
+/** Renders the pair back into a template, for migrating the old two-field shape. */
+export function toAuthTemplate(auth: AuthConfig): string {
+  const scheme = auth.scheme.trim()
+  return `${auth.header}: ${scheme ? `${scheme} ` : ''}${TOKEN_PLACEHOLDER}`
+}
+
 export interface BuildHeadersInput {
   /** Extra non-sensitive headers from settings. */
   readonly extra?: Record<string, string>

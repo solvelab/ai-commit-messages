@@ -132,11 +132,11 @@ describe('auth settings', () => {
 
   it('keeps an empty scheme, which means "send the raw token"', () => {
     // `str()` would turn blank into the default; here blank is a meaningful choice.
-    expect(readSettings({ authScheme: '' }).settings.authScheme).toBe('')
+    expect(readSettings({ authHeader: 'Authorization: {token}' }).settings.authScheme).toBe('')
   })
 
   it('accepts a custom header name', () => {
-    expect(readSettings({ authHeader: 'x-api-key' }).settings.authHeader).toBe('x-api-key')
+    expect(readSettings({ authHeader: 'x-api-key: {token}' }).settings.authHeader).toBe('x-api-key')
   })
 
   it('reads extra headers and drops non-string values with a report', () => {

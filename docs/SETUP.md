@@ -121,3 +121,34 @@ sudo update-ca-certificates
 
 E recarregue a janela. Não existe (e não vai existir) uma opção de "ignorar erro de certificado": o
 patch de proxy descarta o `rejectUnauthorized` do dispatcher, então a opção mentiria.
+
+### Onde entra a API key
+
+Não existe campo de chave nas settings, e isso é deliberado: `settings.json` é texto puro no disco,
+legível por qualquer outra extensão via `getConfiguration()`, sincronizado pela conta e commitável
+quando cai em `.vscode/settings.json`. A chave vive no `SecretStorage`, que é por extensão,
+criptografado e não sincroniza.
+
+Três caminhos, todos gravando no mesmo lugar:
+
+- o link **Set API key…** na própria página de settings, na descrição do provider e do endpoint;
+- o passo do assistente `AI Commit Messages: Configure…`, que pergunta a chave quando o backend
+  escolhido exige uma;
+- o comando `AI Commit Messages: Set token…` na paleta.
+
+A chave fica presa ao **host** do endpoint: trocar de provider não reaproveita a credencial do
+anterior. Para apagar, `AI Commit Messages: Clear token`.
+
+### Gateway com cabeçalho fora do padrão
+
+`aiCommitMessages.authHeader` descreve a linha inteira do cabeçalho, com `{token}` no lugar da
+chave. O default `Authorization: Bearer {token}` serve para OpenAI, Groq, OpenRouter e Gemini.
+Um gateway que espere outra coisa:
+
+```jsonc
+"aiCommitMessages.authHeader": "x-api-key: {token}"      // cabeçalho próprio
+"aiCommitMessages.authHeader": "Authorization: {token}"  // token cru, sem esquema
+```
+
+Sem `{token}` o valor é recusado e o default vale — um cabeçalho montado sem a chave falharia no
+servidor, longe da causa.
