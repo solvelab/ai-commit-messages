@@ -174,7 +174,7 @@
               "Any other server speaking /v1/chat/completions."
             ],
             "scope": "window",
-            "markdownDescription": "Backend to generate with. Picking one suggests its usual endpoint.\n\n▸ **[Configure connection…](command:aiCommitMessages.configure)** — backend, endpoint, API key and model, in one flow.\n\nOr one at a time: **[Set endpoint…](command:aiCommitMessages.setEndpoint)** · **[Set API key…](command:aiCommitMessages.setToken)** · **[Select model…](command:aiCommitMessages.selectModel)**\n\n_The endpoint is stored per machine, so in a remote session it is shown on the_ **Remote** _tab, not this one — the command above edits it from either. The API key is never in this file: it goes to the OS secret store._",
+            "markdownDescription": "Backend to generate with. Picking one suggests its endpoint.\n\n**[Configure connection…](command:aiCommitMessages.configure)** · **[Set API key…](command:aiCommitMessages.setToken)** — the key goes to the OS secret store, never to this file.",
             "order": 1,
             "enumItemLabels": [
               "Ollama",
@@ -191,16 +191,16 @@
           },
           "aiCommitMessages.endpoint": {
             "type": "string",
-            "default": "http://127.0.0.1:11434",
-            "scope": "machine",
-            "markdownDescription": "**Base URL** of the server — not a full endpoint. A path such as `/api/generate` is trimmed.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — for a gateway or a hosted endpoint. The key is stored in the OS secret store, never in this file.\n\n_Machine-scoped: it must differ between local and remote, is never synced, and a cloned repository must not be able to redirect your staged diff — which is why it cannot be set in_ `.vscode/settings.json`.",
+            "default": "http://localhost:11434",
+            "scope": "window",
+            "markdownDescription": "Where the model server is. Keep the default for a local Ollama; change it for a server on your network or a hosted one. A full path such as `/api/generate` is trimmed.\n\nExample: `http://192.168.1.10:11434`",
             "order": 2
           },
           "aiCommitMessages.model": {
             "type": "string",
             "default": "qwen2.5-coder:7b",
             "scope": "window",
-            "markdownDescription": "Model to generate with. Must exist on the server.\n\n▸ **[Select model…](command:aiCommitMessages.selectModel)** — pick from what your backend actually offers, or type the name here.\n\n_A dropdown is not possible: a setting's list is fixed in the manifest and cannot be filled in at runtime._",
+            "markdownDescription": "Model to generate with. Must exist on the server.\n\n**[Select model…](command:aiCommitMessages.selectModel)** lists what your backend offers.",
             "order": 3
           },
           "aiCommitMessages.authHeader": {
@@ -208,7 +208,7 @@
             "default": "Authorization: Bearer {token}",
             "scope": "window",
             "order": 4,
-            "markdownDescription": "**Optional.** Whole header line that carries the key, with `{token}` where the key goes.\n\nLeave as is for OpenAI, Groq, OpenRouter and Gemini. Change it only for a gateway that expects something else:\n\n- `x-api-key: {token}`\n- `Authorization: {token}` (raw, no scheme)\n\nThe key itself is **never** stored here: only the shape of the header is."
+            "markdownDescription": "Optional. Only for a gateway that expects something other than the default — `x-api-key: {token}`, or `Authorization: {token}` for a raw token. `{token}` marks where the key goes; the key itself is never stored here."
           },
           "aiCommitMessages.headers": {
             "type": "object",
@@ -218,7 +218,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "markdownDescription": "**Optional.** Extra headers sent with every request, for gateways that need routing or tenant fields.\n\nNever put the key here: this file is plaintext on disk and synced."
+            "markdownDescription": "Optional. Extra headers for gateways that need routing or tenant fields. Never the key: this file is plaintext on disk and synced."
           },
           "aiCommitMessages.timeoutMs": {
             "type": "number",

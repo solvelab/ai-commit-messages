@@ -192,13 +192,28 @@ suite('settings layout', () => {
     }
   })
 
-  test('only the endpoint stays machine-scoped', () => {
+  // Machine scope hides a setting from the User tab in a remote session. The endpoint is the field
+  // people configure first, so it cannot be hidden — the redirect protection it used to buy is now
+  // a confirmation before the diff is sent (`endpointTrust`).
+  test('hides nothing from the User tab', () => {
     const machine = configuration()
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.scope === 'machine' || schema.scope === 'machine-overridable')
       .map(([key]) => key)
-    // Machine scope hides a setting from the User tab in a remote session, so it is spent only
-    // where it buys something: stopping a cloned repository from redirecting the staged diff.
-    assert.deepEqual(machine, ['aiCommitMessages.endpoint'])
+    assert.deepEqual(machine, [])
+  })
+
+  // A repository can now carry an endpoint, so the untrusted-workspace list has to keep covering it.
+  test('keeps the endpoint restricted in untrusted workspaces', () => {
+    const extension = vscode.extensions.getExtension(EXTENSION_ID)
+    const restricted = extension?.packageJSON.capabilities?.untrustedWorkspaces
+      ?.restrictedConfigurations as string[] | undefined
+    assert.ok(restricted?.includes('aiCommitMessages.endpoint'))
+  })
+
+  // A LAN address from someone's testing is not an example anyone else can use.
+  test('ships no hardcoded private address', () => {
+    const text = JSON.stringify(configuration())
+    assert.ok(!/192\.168\.15\.6/.test(text), 'a test machine address leaked into the manifest')
   })
 })

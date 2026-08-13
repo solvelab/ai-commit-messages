@@ -61,7 +61,7 @@ export async function configure(): Promise<void> {
       `Base URL of the model server. A full endpoint is trimmed automatically. ` +
       `Now in use: ${settings.endpoint || 'nothing configured yet'}.`,
     value: suggestedEndpoint,
-    placeHolder: 'http://192.168.15.6:11434',
+    placeHolder: 'http://localhost:11434',
     validateInput: value => validateEndpointInput(value, backend.adapter),
     ignoreFocusOut: true,
   })

@@ -23,7 +23,7 @@ export async function setEndpoint(): Promise<void> {
       'Base URL of the model server — not a full endpoint. A path such as /api/generate is trimmed. ' +
       'It is stored per machine and never synced, so a laptop and a remote host can differ.',
     value: settings.endpoint,
-    placeHolder: settings.backend.defaultEndpoint || 'http://192.168.15.6:11434',
+    placeHolder: settings.backend.defaultEndpoint || 'http://localhost:11434',
     validateInput: input => validateEndpointInput(input, settings.backend.adapter),
     ignoreFocusOut: true,
   })

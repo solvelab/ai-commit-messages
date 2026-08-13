@@ -7,7 +7,9 @@ import { getGitApi } from '../git/api.js'
 import { createCollectHost } from '../git/collectHost.js'
 import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
+import { endpointTrust } from '../endpointTrust.js'
 import { getLog } from '../log.js'
+import { CONFIG_SECTION } from '../meta.js'
 import { withAbort } from '../net.js'
 import { readToken } from './secrets.js'
 import { createProvider } from '../providers/registry.js'
@@ -19,6 +21,15 @@ import { packWithinBudget } from '../budget/pack.js'
 import { redactFiles } from '../redact.js'
 import { diffBudgetChars, usableContextTokens, type Settings } from '../settings.js'
 import type { Repository } from '../types/git.js'
+
+const CONFIRMED_ENDPOINTS_KEY = 'confirmedEndpoints'
+
+let workspaceMemory: vscode.Memento | undefined
+
+/** Confirmations are per workspace, so they live in workspace state. */
+export function initEndpointConfirmations(context: vscode.ExtensionContext): void {
+  workspaceMemory = context.workspaceState
+}
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -42,6 +53,13 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const { settings, problems } = currentSettings(repository.rootUri)
   for (const problem of problems) {
     log.warn(`configuration: ${problem.message}`)
+  }
+
+  // Nothing leaves the machine before this: the endpoint is a plain setting now, so a repository can
+  // carry one, and a repository's choice of where to send your staged diff is worth one question.
+  if (!(await confirmEndpoint(settings.endpoint, repository.rootUri))) {
+    log.warn(`generation cancelled: endpoint ${settings.endpoint} not confirmed`)
+    return
   }
 
   // Three surfaces can fire this command; two at once against the same repository produced two
@@ -281,4 +299,41 @@ function providerMessage(error: ProviderError, settings: Settings): string {
     default:
       return `The model backend refused the request: ${error.message}`
   }
+}
+
+/** Asks once before a repository-provided endpoint receives the diff. See `endpointTrust`. */
+async function confirmEndpoint(effective: string, scope: vscode.Uri): Promise<boolean> {
+  const inspected = vscode.workspace.getConfiguration(CONFIG_SECTION, scope).inspect<string>('endpoint')
+  const verdict = endpointTrust({
+    effective,
+    ...(inspected?.workspaceValue ? { workspaceValue: inspected.workspaceValue } : {}),
+    ...(inspected?.workspaceFolderValue
+      ? { workspaceFolderValue: inspected.workspaceFolderValue }
+      : {}),
+    ...(inspected?.globalValue ? { userValue: inspected.globalValue } : {}),
+    confirmed: confirmedEndpoints(),
+  })
+  if (!verdict.needsConfirmation) {
+    return true
+  }
+
+  const choice = await vscode.window.showWarningMessage(
+    `This repository sets the model endpoint to ${verdict.endpoint}. Your staged diff would be sent there.`,
+    { modal: true },
+    'Send to this endpoint',
+  )
+  if (choice !== 'Send to this endpoint') {
+    return false
+  }
+
+  await rememberEndpoint(verdict.endpoint ?? effective)
+  return true
+}
+
+function confirmedEndpoints(): readonly string[] {
+  return workspaceMemory?.get<string[]>(CONFIRMED_ENDPOINTS_KEY) ?? []
+}
+
+async function rememberEndpoint(endpoint: string): Promise<void> {
+  await workspaceMemory?.update(CONFIRMED_ENDPOINTS_KEY, [...confirmedEndpoints(), endpoint])
 }
