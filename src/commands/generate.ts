@@ -72,7 +72,7 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
       // Deliberate: fighting that patch is how LAN calls break in corporate setups.
       // Optional everywhere: no token means the request goes out exactly as before, which is the
       // common local case. A token appears when a gateway sits in front of the server.
-      const credential = await readToken(settings.provider)
+      const credential = await readToken(settings.provider, settings.endpoint)
       let provider
       try {
         provider = createProvider(settings.provider, {

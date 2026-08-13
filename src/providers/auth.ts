@@ -45,35 +45,61 @@ export function formatCredential(token: string, auth: AuthConfig = DEFAULT_AUTH)
   return scheme ? `${scheme} ${token}` : token
 }
 
+/** Replaces any entry whose name matches case-insensitively, and reports the one it replaced. */
+function put(
+  headers: Record<string, string>,
+  name: string,
+  value: string,
+): string | undefined {
+  const clashing = Object.keys(headers).find(k => k.toLowerCase() === name.toLowerCase())
+  if (clashing) {
+    delete headers[clashing]
+  }
+  headers[name] = value
+  return clashing && clashing !== name ? clashing : undefined
+}
+
 export function buildHeaders(input: BuildHeadersInput): BuiltHeaders {
   const auth = input.auth ?? DEFAULT_AUTH
-  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  const headers: Record<string, string> = {}
+  const replaced: string[] = []
 
+  // Settings first, then our own defaults on top — so a user-provided `Content-Type` is replaced
+  // rather than sent alongside ours. HTTP header names are case-insensitive, so comparing them
+  // verbatim is how `Content-Type` and `content-type` both went out, concatenated by the server.
   for (const [key, value] of Object.entries(input.extra ?? {})) {
     if (typeof value === 'string' && key.trim()) {
-      headers[key.trim()] = value
+      const was = put(headers, key.trim(), value)
+      if (was) {
+        replaced.push(was)
+      }
     }
+  }
+
+  const contentTypeWas = put(headers, 'content-type', 'application/json')
+  if (contentTypeWas) {
+    replaced.push(contentTypeWas)
   }
 
   const token = input.token?.trim()
   if (!token) {
-    return { headers, authenticated: false }
+    return {
+      headers,
+      authenticated: false,
+      ...(replaced.length > 0 ? { overrode: replaced[0] } : {}),
+    }
   }
 
   const headerName = auth.header.trim() || DEFAULT_AUTH.header
-  // Case-insensitive: HTTP header names are, and a settings-provided `authorization` must not end
-  // up beside our `Authorization`.
-  const clashing = Object.keys(headers).find(k => k.toLowerCase() === headerName.toLowerCase())
-  const overrode = clashing && clashing !== headerName ? clashing : undefined
-  if (clashing) {
-    delete headers[clashing]
+  const credentialWas = put(headers, headerName, formatCredential(token, auth))
+  if (credentialWas) {
+    replaced.push(credentialWas)
   }
 
-  headers[headerName] = formatCredential(token, auth)
   return {
     headers,
     authenticated: true,
-    ...(overrode ?? clashing ? { overrode: clashing } : {}),
+    ...(replaced.length > 0 ? { overrode: replaced[0] } : {}),
   }
 }
 

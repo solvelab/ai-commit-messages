@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { hostOf } from '../endpoint.js'
 import { getLog } from '../log.js'
 import { redactToken } from '../providers/auth.js'
 import type { ProviderId } from '../settings.js'
@@ -18,26 +19,32 @@ export function initSecrets(context: vscode.ExtensionContext): void {
   secrets = context.secrets
 }
 
-function key(provider: ProviderId): string {
-  // Per provider from the start: the OpenAI-compatible backend will need its own.
-  return `aiCommitMessages.token.${provider}`
+/**
+ * The credential is scoped to the **endpoint**, not just the provider.
+ *
+ * With a provider-only key, saving an OpenAI key and later switching the preset to Groq sent the
+ * OpenAI credential to Groq's servers — the extension leaking one vendor's key to another.
+ */
+function key(provider: ProviderId, endpoint: string): string {
+  return `aiCommitMessages.token.${provider}.${hostOf(endpoint)}`
 }
 
-export async function readToken(provider: ProviderId): Promise<string | undefined> {
-  const value = await secrets?.get(key(provider))
+export async function readToken(provider: ProviderId, endpoint: string): Promise<string | undefined> {
+  const value = await secrets?.get(key(provider, endpoint))
   return value?.trim() ? value : undefined
 }
 
-export async function setToken(provider: ProviderId): Promise<void> {
+export async function setToken(provider: ProviderId, endpoint: string): Promise<void> {
   const log = getLog()
   if (!secrets) {
     return
   }
 
   const token = await vscode.window.showInputBox({
-    title: `AI Commit Messages: token for ${provider}`,
+    title: `AI Commit Messages: token for ${hostOf(endpoint)}`,
     prompt:
-      'Optional. Needed only when a gateway sits in front of the model server, or for a hosted endpoint. Leave empty to remove it.',
+        'Optional. Needed only when a gateway sits in front of the model server, or for a hosted endpoint. ' +
+      `Saved for ${hostOf(endpoint)} only — it is never sent to a different host. Leave empty to remove it.`,
     password: true,
     ignoreFocusOut: true,
   })
@@ -46,23 +53,25 @@ export async function setToken(provider: ProviderId): Promise<void> {
   }
 
   if (!token.trim()) {
-    await secrets.delete(key(provider))
-    log.info(`token for ${provider} removed`)
-    void vscode.window.showInformationMessage(`Token for ${provider} removed.`)
+    await secrets.delete(key(provider, endpoint))
+    log.info(`token for ${hostOf(endpoint)} removed`)
+    void vscode.window.showInformationMessage(`Token for ${hostOf(endpoint)} removed.`)
     return
   }
 
-  await secrets.store(key(provider), token.trim())
+  await secrets.store(key(provider, endpoint), token.trim())
   // The value never reaches the log.
-  log.info(`token for ${provider} stored (${redactToken(token.trim())})`)
-  void vscode.window.showInformationMessage(`Token for ${provider} saved to the secret store.`)
+  log.info(`token for ${hostOf(endpoint)} stored (${redactToken(token.trim())})`)
+  void vscode.window.showInformationMessage(
+    `Token for ${hostOf(endpoint)} saved to the secret store.`,
+  )
 }
 
-export async function clearToken(provider: ProviderId): Promise<void> {
+export async function clearToken(provider: ProviderId, endpoint: string): Promise<void> {
   if (!secrets) {
     return
   }
-  await secrets.delete(key(provider))
-  getLog().info(`token for ${provider} cleared`)
-  void vscode.window.showInformationMessage(`Token for ${provider} cleared.`)
+  await secrets.delete(key(provider, endpoint))
+  getLog().info(`token for ${hostOf(endpoint)} cleared`)
+  void vscode.window.showInformationMessage(`Token for ${hostOf(endpoint)} cleared.`)
 }

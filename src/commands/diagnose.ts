@@ -12,7 +12,7 @@ export async function diagnose(): Promise<void> {
   const log = getLog()
   const { settings } = currentSettings()
   const http = vscode.workspace.getConfiguration('http')
-  const credential = await readToken(settings.provider)
+  const credential = await readToken(settings.provider, settings.endpoint)
 
   const started = Date.now()
   let reach: DiagnosticFacts['reach']

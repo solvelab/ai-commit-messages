@@ -38,6 +38,22 @@ describe('buildHeaders', () => {
     expect(built.headers['X-Title']).toBe('AI Commit Messages')
   })
 
+  it('replaces a settings Content-Type instead of sending both', () => {
+    // HTTP header names are case-insensitive; comparing them verbatim is how both went out and the
+    // server received the values concatenated.
+    const built = buildHeaders({ extra: { 'Content-Type': 'text/plain' } })
+    const names = Object.keys(built.headers).map(k => k.toLowerCase())
+    expect(names.filter(n => n === 'content-type')).toHaveLength(1)
+    expect(built.headers['content-type']).toBe('application/json')
+    expect(built.overrode).toBe('Content-Type')
+  })
+
+  it('deduplicates any header, not just the credential one', () => {
+    const built = buildHeaders({ extra: { 'X-Title': 'a', 'x-title': 'b' } })
+    const names = Object.keys(built.headers).map(k => k.toLowerCase())
+    expect(names.filter(n => n === 'x-title')).toHaveLength(1)
+  })
+
   it('lets the credential win over a header from settings, and says which one', () => {
     const built = buildHeaders({ extra: { authorization: 'Bearer stale' }, token: 'fresh' })
     expect(built.headers.Authorization).toBe('Bearer fresh')

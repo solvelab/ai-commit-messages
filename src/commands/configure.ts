@@ -124,7 +124,7 @@ async function pickModel(
   let models: { id: string; label: string; detail?: string }[] = []
 
   try {
-    const token = await readToken(providerId)
+    const token = await readToken(providerId, endpoint)
     const provider = createProvider(providerId, {
       endpoint,
       fetch: globalThis.fetch as FetchLike,
