@@ -36,6 +36,11 @@ describe('packWithinBudget', () => {
   })
 
   it('handles an empty change set', () => {
-    expect(packWithinBudget([], 1000)).toEqual({ kept: [], omitted: [] })
+    expect(packWithinBudget([], 1000)).toEqual({
+      kept: [],
+      omitted: [],
+      excluded: [],
+      invalidGlobs: [],
+    })
   })
 })

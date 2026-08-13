@@ -1,4 +1,5 @@
 import { DEFAULT_MAX_BODY_WORDS } from './prompt/commit.js'
+import { DEFAULT_EXCLUDE_GLOBS } from './budget/exclude.js'
 import { DEFAULT_TIMEOUT_MS } from './net.js'
 
 /**
@@ -36,6 +37,8 @@ export interface Settings {
   readonly compatPreset: string
   /** Mask recognizable secrets in the diff before sending it. */
   readonly redactSecrets: boolean
+  /** Files matching these contribute a header only. */
+  readonly excludeGlobs: readonly string[]
 }
 
 export const DEFAULTS: Settings = {
@@ -54,6 +57,7 @@ export const DEFAULTS: Settings = {
   headers: {},
   compatPreset: 'custom',
   redactSecrets: true,
+  excludeGlobs: DEFAULT_EXCLUDE_GLOBS,
 }
 
 export interface SettingsProblem {
@@ -132,6 +136,17 @@ function readHeaders(raw: unknown, problems: SettingsProblem[]): Record<string, 
   return out
 }
 
+function readGlobs(raw: unknown, problems: SettingsProblem[]): readonly string[] {
+  if (raw === undefined || raw === null) {
+    return DEFAULTS.excludeGlobs
+  }
+  if (!Array.isArray(raw)) {
+    problems.push({ key: 'excludeGlobs', message: 'excludeGlobs must be an array of strings.' })
+    return DEFAULTS.excludeGlobs
+  }
+  return raw.filter((g): g is string => typeof g === 'string' && g.trim().length > 0)
+}
+
 function str(raw: unknown, fallback: string): string {
   return typeof raw === 'string' && raw.trim() ? raw.trim() : fallback
 }
@@ -170,6 +185,7 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       headers: readHeaders(raw.headers, problems),
       compatPreset: str(raw.compatPreset, DEFAULTS.compatPreset),
       redactSecrets: typeof raw.redactSecrets === 'boolean' ? raw.redactSecrets : DEFAULTS.redactSecrets,
+      excludeGlobs: readGlobs(raw.excludeGlobs, problems),
     },
     problems,
   }

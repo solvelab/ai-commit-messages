@@ -111,7 +111,15 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
           maxOutputTokens: 512,
           fallbackChars: settings.maxDiffChars,
         })
-        const { kept, omitted } = packWithinBudget(changes.files, budget)
+        const { kept, omitted, excluded, invalidGlobs } = packWithinBudget(changes.files, budget, {
+          excludeGlobs: settings.excludeGlobs,
+        })
+        for (const glob of invalidGlobs) {
+          log.warn(`ignoring invalid exclude glob: ${glob}`)
+        }
+        if (excluded.length > 0) {
+          log.info(`generated files reduced to a header: ${excluded.join(', ')}`)
+        }
         if (omitted.length > 0) {
           log.info(`omitted from the prompt to fit ${budget} chars: ${omitted.join(', ')}`)
         }

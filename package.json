@@ -298,6 +298,42 @@
             "scope": "window",
             "order": 3,
             "markdownDescription": "Mask recognizable secrets — private keys, provider tokens, JWTs and credential assignments — in the diff **before** it is sent. The value is replaced by a visible marker so the model still knows something was there."
+          },
+          "aiCommitMessages.excludeGlobs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "package-lock.json",
+              "pnpm-lock.yaml",
+              "yarn.lock",
+              "bun.lockb",
+              "Cargo.lock",
+              "poetry.lock",
+              "Pipfile.lock",
+              "Gemfile.lock",
+              "composer.lock",
+              "go.sum",
+              "*.min.js",
+              "*.min.css",
+              "*.map",
+              "dist/**",
+              "build/**",
+              "vendor/**",
+              "node_modules/**",
+              "*.snap",
+              "*.png",
+              "*.jpg",
+              "*.jpeg",
+              "*.gif",
+              "*.webp",
+              "*.ico",
+              "*.pdf"
+            ],
+            "scope": "window",
+            "order": 4,
+            "markdownDescription": "Files matching these globs contribute only their header to the prompt, not their contents. A lockfile must not push the actual change out of the budget — but the model still learns it changed. Supports `*`, `**` and `?`."
           }
         }
       }
