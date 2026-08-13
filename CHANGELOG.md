@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/solvelab/ai-commit-messages/compare/v1.7.1...v1.7.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **settings:** um link de API key por aba e um nome só para a ação ([#66](https://github.com/solvelab/ai-commit-messages/issues/66)) ([bb3f9eb](https://github.com/solvelab/ai-commit-messages/commit/bb3f9eb32cdc1f9ca60d469051e78ebfddfe59b9)), closes [#65](https://github.com/solvelab/ai-commit-messages/issues/65)
+
 ## [1.7.1](https://github.com/solvelab/ai-commit-messages/compare/v1.7.0...v1.7.1) (2026-08-13)
 
 
