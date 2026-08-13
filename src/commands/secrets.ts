@@ -41,7 +41,7 @@ export async function setToken(provider: ProviderId, endpoint: string): Promise<
   }
 
   const token = await vscode.window.showInputBox({
-    title: `AI Commit Messages: token for ${hostOf(endpoint)}`,
+    title: `AI Commit Messages: API key for ${hostOf(endpoint)}`,
     prompt:
         'Optional. Needed only when a gateway sits in front of the model server, or for a hosted endpoint. ' +
       `Saved for ${hostOf(endpoint)} only — it is never sent to a different host. Leave empty to remove it.`,
@@ -54,16 +54,16 @@ export async function setToken(provider: ProviderId, endpoint: string): Promise<
 
   if (!token.trim()) {
     await secrets.delete(key(provider, endpoint))
-    log.info(`token for ${hostOf(endpoint)} removed`)
-    void vscode.window.showInformationMessage(`Token for ${hostOf(endpoint)} removed.`)
+    log.info(`API key for ${hostOf(endpoint)} removed`)
+    void vscode.window.showInformationMessage(`API key for ${hostOf(endpoint)} removed.`)
     return
   }
 
   await secrets.store(key(provider, endpoint), token.trim())
   // The value never reaches the log.
-  log.info(`token for ${hostOf(endpoint)} stored (${redactToken(token.trim())})`)
+  log.info(`API key for ${hostOf(endpoint)} stored (${redactToken(token.trim())})`)
   void vscode.window.showInformationMessage(
-    `Token for ${hostOf(endpoint)} saved to the secret store.`,
+    `API key for ${hostOf(endpoint)} saved to the secret store.`,
   )
 }
 
@@ -72,6 +72,6 @@ export async function clearToken(provider: ProviderId, endpoint: string): Promis
     return
   }
   await secrets.delete(key(provider, endpoint))
-  getLog().info(`token for ${hostOf(endpoint)} cleared`)
-  void vscode.window.showInformationMessage(`Token for ${hostOf(endpoint)} cleared.`)
+  getLog().info(`API key for ${hostOf(endpoint)} cleared`)
+  void vscode.window.showInformationMessage(`API key for ${hostOf(endpoint)} cleared.`)
 }

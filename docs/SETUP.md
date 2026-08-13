@@ -131,13 +131,14 @@ criptografado e não sincroniza.
 
 Três caminhos, todos gravando no mesmo lugar:
 
-- o link **Set API key…** na própria página de settings, na descrição do provider e do endpoint;
+- o link **Set API key…** na página de settings — na descrição do **Provider** (aba User) e do
+  **Endpoint** (aba Remote, a única setting da conexão visível ali numa sessão remota);
 - o passo do assistente `AI Commit Messages: Configure…`, que pergunta a chave quando o backend
   escolhido exige uma;
-- o comando `AI Commit Messages: Set token…` na paleta.
+- o comando `AI Commit Messages: Set API key…` na paleta.
 
 A chave fica presa ao **host** do endpoint: trocar de provider não reaproveita a credencial do
-anterior. Para apagar, `AI Commit Messages: Clear token`.
+anterior. Para apagar, `AI Commit Messages: Clear API key`.
 
 ### Gateway com cabeçalho fora do padrão
 

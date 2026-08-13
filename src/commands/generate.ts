@@ -228,13 +228,13 @@ function reportFailure(error: unknown, settings: Settings): void {
     void vscode.window
       .showErrorMessage(
         providerMessage(error, settings),
-        ...(error.code === 'unauthorized' ? ['Set token…'] : []),
+        ...(error.code === 'unauthorized' ? ['Set API key…'] : []),
         'Configure…',
         'Show Log',
         'Open Settings',
       )
       .then(choice => {
-        if (choice === 'Set token…') {
+        if (choice === 'Set API key…') {
           void vscode.commands.executeCommand('aiCommitMessages.setToken')
         } else if (choice === 'Configure…') {
           void vscode.commands.executeCommand('aiCommitMessages.configure')

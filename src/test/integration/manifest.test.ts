@@ -10,6 +10,18 @@ interface ConfigNode {
   properties: Record<string, { order?: number; scope?: string; markdownDescription?: string }>
 }
 
+interface CommandContribution {
+  command: string
+  title: string
+}
+
+function commands(): CommandContribution[] {
+  const extension = vscode.extensions.getExtension(EXTENSION_ID)
+  const contributed = extension?.packageJSON.contributes?.commands
+  assert.ok(Array.isArray(contributed), 'commands must be an array')
+  return contributed as CommandContribution[]
+}
+
 function configuration(): ConfigNode[] {
   const extension = vscode.extensions.getExtension(EXTENSION_ID)
   const contributed = extension?.packageJSON.contributes?.configuration
@@ -111,12 +123,38 @@ suite('settings layout', () => {
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.setToken'))
       .map(([key]) => key)
-    assert.deepEqual(linked, [
-      'aiCommitMessages.provider',
-      'aiCommitMessages.endpoint',
-      'aiCommitMessages.authHeader',
-      'aiCommitMessages.headers',
-    ])
+    // One per tab, not four: `provider` is the first thing on the User tab, and `endpoint` is the
+    // only setting visible on the Remote tab, where the key is bound to the host anyway. Repeating
+    // the same link on the header fields read as if they were different actions.
+    assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.endpoint'])
+  })
+
+  // Three names for one action: the link said "API key", the palette said "token", and the input
+  // box said "token for <host>".
+  test('calls the credential an API key everywhere it is shown', () => {
+    const shown = [
+      ...commands().map(c => c.title),
+      ...configuration().flatMap(node =>
+        Object.values(node.properties).map(schema => schema.markdownDescription ?? ''),
+      ),
+    ]
+    // Narrow on purpose: `{token}` is the placeholder in the header template — part of the API —
+    // and "provider tokens" in `redactSecrets` names what gets masked. What must not come back is
+    // "token" used as the name of *our* credential action.
+    for (const text of shown) {
+      assert.ok(!/\b(set|clear|save|enter)\s+(the\s+|your\s+)?tokens?\b/i.test(text), text)
+      assert.ok(!/\btokens? for\b/i.test(text), text)
+    }
+    for (const title of commands().map(c => c.title)) {
+      assert.ok(!/\btokens?\b/i.test(title), `command title "${title}" still says token`)
+    }
+  })
+
+  // The IDs are not interface text: renaming them breaks keybindings that people already set.
+  test('keeps the credential command IDs untouched', () => {
+    const ids = commands().map(c => c.command)
+    assert.ok(ids.includes('aiCommitMessages.setToken'))
+    assert.ok(ids.includes('aiCommitMessages.clearToken'))
   })
 
   test('never offers a setting that would hold the credential', () => {
