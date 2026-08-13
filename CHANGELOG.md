@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/solvelab/ai-commit-messages/compare/v1.1.0...v1.2.0) (2026-08-13)
+
+
+### Features
+
+* **security:** redigir segredos no diff antes de sair da máquina ([1f60a77](https://github.com/solvelab/ai-commit-messages/commit/1f60a77f6a93639c06522c76696b099ccaa1272f))
+
 # [1.1.0](https://github.com/solvelab/ai-commit-messages/compare/v1.0.0...v1.1.0) (2026-08-13)
 
 
