@@ -10,22 +10,11 @@ import {
 import { getLog } from '../log.js'
 import { withAbort } from '../net.js'
 import { CONFIG_SECTION } from '../meta.js'
-import { COMPAT_PRESETS, findPreset } from '../providers/presets.js'
-import { createProvider, isImplemented } from '../providers/registry.js'
+import { createProvider } from '../providers/registry.js'
 import { readToken, setToken } from './secrets.js'
 import { ProviderError, type FetchLike } from '../providers/types.js'
-import { PROVIDERS, type ProviderId, type Settings } from '../settings.js'
-
-const PROVIDER_LABELS: Record<ProviderId, { label: string; detail: string }> = {
-  ollama: {
-    label: 'Ollama',
-    detail: "Ollama's native API — supports num_ctx, structured output and think:false",
-  },
-  'openai-compat': {
-    label: 'OpenAI-compatible',
-    detail: 'LM Studio, OpenRouter, Groq, vLLM, llama.cpp — /v1/chat/completions',
-  },
-}
+import { BACKENDS, type Backend } from '../providers/catalog.js'
+import { type ProviderId, type Settings } from '../settings.js'
 
 const MANUAL_MODEL = '$(edit) Type the model name…'
 
@@ -40,66 +29,46 @@ export async function configure(): Promise<void> {
   const log = getLog()
   const { settings } = currentSettings()
 
-  const providerPick = await vscode.window.showQuickPick(
-    PROVIDERS.map(id => ({
-      id,
-      ...PROVIDER_LABELS[id],
-      // Say it in the list rather than after three steps of setup.
-      description: isImplemented(id) ? undefined : 'not available yet',
-      picked: id === settings.provider,
+  const backendPick = await vscode.window.showQuickPick(
+    BACKENDS.map(backend => ({
+      label: backend.label,
+      description: backend.defaultEndpoint || 'you supply the URL',
+      detail: backend.description,
+      backend,
+      picked: backend.id === settings.backend.id,
     })),
     { title: 'AI Commit Messages (1/3)', placeHolder: 'Which backend?' },
   )
-  if (!providerPick) {
+  if (!backendPick) {
     return
   }
+  const backend: Backend = backendPick.backend
 
-  // The OpenAI-compatible world is not one API: the preset decides the base URL and which
-  // request fields are safe to send.
-  let presetId: string | undefined
-  if (providerPick.id === 'openai-compat') {
-    const presetPick = await vscode.window.showQuickPick(
-      COMPAT_PRESETS.map(preset => ({
-        label: preset.label,
-        description: preset.baseUrl || 'you supply the URL',
-        ...(preset.note ? { detail: preset.note } : {}),
-        id: preset.id,
-      })),
-      { title: 'AI Commit Messages (1b/3)', placeHolder: 'Which flavour?' },
-    )
-    if (!presetPick) {
-      return
-    }
-    presetId = presetPick.id
-  }
-
+  // The endpoint the catalog knows beats whatever is configured for a different backend.
   const suggestedEndpoint =
-    (presetId ? findPreset(presetId)?.baseUrl : undefined) || settings.endpoint
+    backend.id === settings.backend.id ? settings.endpoint : backend.defaultEndpoint
 
   const endpoint = await vscode.window.showInputBox({
     title: 'AI Commit Messages (2/3)',
     prompt: 'Base URL of the model server. A full endpoint is trimmed automatically.',
     value: suggestedEndpoint,
     placeHolder: 'http://192.168.15.6:11434',
-    validateInput: value => validateEndpointInput(value, providerPick.id),
+    validateInput: value => validateEndpointInput(value, backend.adapter),
     ignoreFocusOut: true,
   })
   if (endpoint === undefined) {
     return
   }
 
-  const model = await pickModel(providerPick.id, endpoint, settings, presetId)
+  const model = await pickModel(backend, endpoint, settings)
   if (model === undefined) {
     return
   }
 
-  const answers: ConfigureAnswers = { provider: providerPick.id, endpoint, model }
+  const answers: ConfigureAnswers = { provider: backend.id, endpoint, model }
 
   try {
     const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
-    if (presetId) {
-      await configuration.update('compatPreset', presetId, vscode.ConfigurationTarget.Global)
-    }
     for (const write of planConfiguration(answers)) {
       // Always Global: `endpoint` is machine-scoped, and under a remote session VS Code resolves
       // this to the remote settings file — where a per-machine endpoint belongs.
@@ -121,11 +90,11 @@ export async function configure(): Promise<void> {
 
 /** Lists the server's models, falling back to typing when it cannot be reached. */
 async function pickModel(
-  providerId: ProviderId,
+  backend: Backend,
   endpoint: string,
   settings: Settings,
-  presetId?: string,
 ): Promise<string | undefined> {
+  const providerId: ProviderId = backend.adapter
   const log = getLog()
   const current = settings.model
   let models: { id: string; label: string; detail?: string }[] = []
@@ -137,7 +106,7 @@ async function pickModel(
     const provider = createProvider(providerId, {
       ...wizardProviderContext({
         endpoint,
-        ...(presetId ? { presetId } : {}),
+        ...(backend.presetId ? { presetId: backend.presetId } : {}),
         ...(token ? { token } : {}),
         authHeader: settings.authHeader,
         authScheme: settings.authScheme,

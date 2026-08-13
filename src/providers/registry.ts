@@ -2,7 +2,7 @@ import type { AuthConfig } from './auth.js'
 import { OllamaProvider } from './ollama.js'
 import { OpenAICompatProvider } from './openaiCompat.js'
 import { ProviderError, type CommitProvider, type FetchLike } from './types.js'
-import { PROVIDERS, type ProviderId } from '../settings.js'
+import { ADAPTERS, type ProviderId } from '../settings.js'
 
 /**
  * Choosing the backend.
@@ -62,7 +62,7 @@ function assertNever(value: never): never {
   throw new ProviderError('http', `Unknown provider "${String(value)}".`)
 }
 
-/** Guards against the manifest enum and the code drifting apart. */
+/** Adapters the registry can build. */
 export function knownProviders(): readonly ProviderId[] {
-  return PROVIDERS
+  return ADAPTERS
 }

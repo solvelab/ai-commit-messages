@@ -132,22 +132,50 @@
             "type": "string",
             "enum": [
               "ollama",
-              "openai-compat"
+              "openai",
+              "groq",
+              "openrouter",
+              "lmstudio",
+              "vllm",
+              "llamacpp",
+              "gemini",
+              "ollama-openai",
+              "custom"
             ],
             "default": "ollama",
             "enumDescriptions": [
-              "Ollama's native API (/api/chat). Supports num_ctx, structured output and think:false.",
-              "Any OpenAI-compatible endpoint (/v1/chat/completions): OpenAI, Groq, OpenRouter, LM Studio, vLLM, llama.cpp."
+              "Ollama's native API. Supports num_ctx, structured output and think:false.",
+              "OpenAI platform. Needs an API key.",
+              "Groq. Needs an API key.",
+              "OpenRouter. Needs an API key.",
+              "LM Studio running locally.",
+              "vLLM server.",
+              "llama.cpp server.",
+              "Gemini through Google's OpenAI-compatible shim. Needs an API key.",
+              "Prefer plain Ollama — the shim cannot set num_ctx.",
+              "Any other server speaking /v1/chat/completions."
             ],
             "scope": "window",
-            "markdownDescription": "Backend to generate with.",
-            "order": 1
+            "markdownDescription": "Backend to generate with. Choosing one decides which of the settings below matter: **Endpoint** and **Model** always; **Set token…** only for a hosted endpoint or a gateway.",
+            "order": 1,
+            "enumItemLabels": [
+              "Ollama",
+              "OpenAI",
+              "Groq",
+              "OpenRouter",
+              "LM Studio",
+              "vLLM",
+              "llama.cpp",
+              "Google Gemini",
+              "Ollama (OpenAI shim)",
+              "Other OpenAI-compatible endpoint"
+            ]
           },
           "aiCommitMessages.endpoint": {
             "type": "string",
             "default": "http://127.0.0.1:11434",
             "scope": "machine",
-            "markdownDescription": "**Base URL** of the model server, e.g. `http://192.168.15.6:11434` — not a full endpoint.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…** from the Command Palette.",
+            "markdownDescription": "**Base URL** of the server, e.g. `http://192.168.15.6:11434` for Ollama or `https://api.groq.com/openai/v1` for Groq — not a full endpoint. Leave the value the backend suggests unless your server lives elsewhere.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…**",
             "order": 2
           },
           "aiCommitMessages.model": {
@@ -171,14 +199,14 @@
             "default": "Authorization",
             "scope": "window",
             "order": 5,
-            "markdownDescription": "Header carrying the credential. Change it for a gateway that expects something else, e.g. `x-api-key`. The credential itself is stored in the secret store, never here — run **AI Commit Messages: Set token**."
+            "markdownDescription": "Only used when a token is stored. Change it for a gateway that expects something else, e.g. `x-api-key`."
           },
           "aiCommitMessages.authScheme": {
             "type": "string",
             "default": "Bearer",
             "scope": "window",
             "order": 6,
-            "markdownDescription": "Scheme prefix for the credential. Leave **empty** to send the raw token, which some gateways require."
+            "markdownDescription": "Only used when a token is stored. Leave **empty** to send the raw token, which some gateways require."
           },
           "aiCommitMessages.headers": {
             "type": "object",
@@ -189,35 +217,6 @@
               "type": "string"
             },
             "markdownDescription": "Extra HTTP headers sent with every request. For **non-sensitive** values only — put credentials in the secret store."
-          },
-          "aiCommitMessages.compatPreset": {
-            "type": "string",
-            "default": "custom",
-            "scope": "window",
-            "order": 8,
-            "enum": [
-              "openai",
-              "groq",
-              "openrouter",
-              "lmstudio",
-              "vllm",
-              "llamacpp",
-              "ollama-v1",
-              "gemini",
-              "custom"
-            ],
-            "enumItemLabels": [
-              "OpenAI",
-              "Groq",
-              "OpenRouter",
-              "LM Studio (local)",
-              "vLLM (local)",
-              "llama.cpp server (local)",
-              "Ollama via its OpenAI shim",
-              "Google Gemini (OpenAI shim)",
-              "Custom endpoint"
-            ],
-            "markdownDescription": "Flavour of OpenAI-compatible endpoint. Only used when the provider is `openai-compat`. The preset fills in the base URL and works around each provider's quirks — Groq rejects fields OpenAI accepts, OpenAI deprecated `max_tokens`, OpenRouter wants attribution headers."
           }
         }
       },
