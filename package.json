@@ -193,7 +193,7 @@
             "type": "string",
             "default": "qwen2.5-coder:7b",
             "scope": "window",
-            "markdownDescription": "Model to generate with. Must exist on the server.\n\n_A dropdown is not possible here — a setting's list is fixed in the manifest and cannot be filled in at runtime. Use_ **AI Commit Messages: Select model…** _(also the ☰ icon in the Source Control title bar) to pick from the models your backend actually offers._",
+            "markdownDescription": "Model to generate with. Must exist on the server.\n\n▸ **[Select model…](command:aiCommitMessages.selectModel)** — pick from what your backend actually offers, or type the name here.\n\n_A dropdown is not possible: a setting's list is fixed in the manifest and cannot be filled in at runtime._",
             "order": 3
           },
           "aiCommitMessages.authHeader": {

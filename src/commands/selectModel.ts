@@ -134,3 +134,8 @@ export async function warmModelCache(
   const key = cacheKey(settings.backend.id, hostOf(settings.endpoint))
   await storage?.update(key, { models, loadedAt: Date.now() } satisfies CachedModels)
 }
+
+/** Models the cache holds for a backend, for deciding whether a configured model belongs to it. */
+export function cachedModelIds(backendId: string, host: string): readonly string[] {
+  return storage?.get<CachedModels>(cacheKey(backendId, host))?.models.map(m => m.id) ?? []
+}

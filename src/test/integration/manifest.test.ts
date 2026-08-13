@@ -157,6 +157,16 @@ suite('settings layout', () => {
     assert.ok(ids.includes('aiCommitMessages.clearToken'))
   })
 
+  // The picker is the only way to see a runtime list; naming the command in prose left people to
+  // open the palette and type it.
+  test('opens the model picker from the settings page', () => {
+    const linked = configuration()
+      .flatMap(node => Object.entries(node.properties))
+      .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.selectModel'))
+      .map(([key]) => key)
+    assert.deepEqual(linked, ['aiCommitMessages.model'])
+  })
+
   test('never offers a setting that would hold the credential', () => {
     const keys = configuration()
       .flatMap(node => Object.keys(node.properties))
