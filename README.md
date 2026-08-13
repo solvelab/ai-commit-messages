@@ -39,14 +39,18 @@ funciona de verdade** — nada aqui é promessa.
 | Sanitização de `<think>`, fences e preâmbulos | ✅ #11 |
 | Settings com escopos e Workspace Trust | ✅ #12 |
 | Migração das settings do `ollama-commit` | ✅ #13 |
-| Orçamento de diff com exclusões por glob | ⏳ M2 |
-| Redação de segredos no diff | ⏳ M2 |
-| Provider OpenAI-compatible + `SecretStorage` | ⏳ M2 |
-| Seletor de modelo e comando de diagnóstico | ⏳ M2 |
-| Publicação em Marketplace e Open VSX | ⏳ M2 |
+| Comando guiado `Configure…` e settings agrupadas | ✅ #24 #28 |
+| Prompt padrão por idioma (pt-BR e en) | ✅ #25 |
+| Credencial opcional, para Ollama atrás de gateway | ✅ #30 |
+| Provider OpenAI-compatible com presets | ✅ #31 |
+| Redação de segredos no diff | ✅ #36 |
+| Exclusão de arquivos gerados do orçamento | ✅ #37 |
+| Comando de diagnóstico de conexão | ✅ #38 |
+| Publicação em Marketplace e Open VSX | ⏳ precisa dos publishers |
 
 Medido em `qwen2.5-coder:7b` contra um Ollama na LAN, sobre 5 commits reais deste workspace:
-**5/5 mensagens no formato, ~1 s cada, nenhuma precisou de retentativa.**
+**5/5 mensagens no formato, ~1 s cada, nenhuma precisou de retentativa** — em pt-BR, em inglês, e
+também pelo shim `/v1`.
 
 ## ✨ Why another one
 
@@ -60,15 +64,25 @@ the failure modes that actually show up with **local** models on **real** reposi
   `/api/show`; the characters-per-token ratio for diffs was measured against this project's own
   history (mean 3.25, worst case 2.66 — the widely quoted "4 chars per token" is off by ~35% for
   diffs).
+- **Secrets are masked before the diff leaves the machine.** A freshly created `.env`, a pasted
+  private key, a token in an example file — private keys, provider tokens, JWTs and credential
+  assignments are replaced by a visible marker. No other extension in this space does this.
+- **Generated files don't eat the prompt.** A commit touching `package-lock.json` would otherwise
+  spend the whole budget on machine noise and push the real change out. The lockfile still appears
+  as a header, because "update the lockfile" is legitimate information.
 - **Multi-root repositories resolve correctly.** No `repositories[0]`.
 - **It can be cancelled.** A 7B model on CPU can take a minute.
 - **Your diff is not casually shipped anywhere.** The endpoint setting is machine-scoped, so a
   cloned repository cannot silently redirect your staged diff to someone else's host.
+- **When it does not work, it tells you why.** `Diagnose connection` reports the real cause —
+  including the extension host's proxy patch, which is the failure nobody expects: `curl` works in
+  the terminal and the extension does not.
 
 ## 🔒 Privacy
 
 No telemetry, no analytics, no phone-home. The staged diff goes to exactly one place: the endpoint
-you configured. Point it at your own Ollama and nothing leaves your network.
+you configured — with recognizable secrets masked first. Point it at your own Ollama and nothing
+leaves your network.
 
 ## 🛠️ Development
 
