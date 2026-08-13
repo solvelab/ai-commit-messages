@@ -129,6 +129,19 @@ suite('settings layout', () => {
     assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.endpoint'])
   })
 
+  // `endpoint` is machine-scoped, so a remote session hides it from the User tab entirely. Without
+  // a command it was unreachable from the tab people are looking at, and the Provider description
+  // claimed it was "below" — which it was not.
+  test('reaches the endpoint from the tab that does not show it', () => {
+    const provider = configuration()
+      .flatMap(node => Object.entries(node.properties))
+      .find(([key]) => key === 'aiCommitMessages.provider')?.[1]
+    assert.ok(provider, 'aiCommitMessages.provider disappeared')
+    const description = provider.markdownDescription ?? ''
+    assert.ok(description.includes('command:aiCommitMessages.setEndpoint'))
+    assert.ok(!description.includes('endpoint below'))
+  })
+
   // Three names for one action: the link said "API key", the palette said "token", and the input
   // box said "token for <host>".
   test('calls the credential an API key everywhere it is shown', () => {
@@ -164,7 +177,9 @@ suite('settings layout', () => {
       .flatMap(node => Object.entries(node.properties))
       .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.selectModel'))
       .map(([key]) => key)
-    assert.deepEqual(linked, ['aiCommitMessages.model'])
+    // Two places, one role each: `provider` is the connection hub and lists every setup command;
+    // `model` is where someone already typing a model name looks.
+    assert.deepEqual(linked, ['aiCommitMessages.provider', 'aiCommitMessages.model'])
   })
 
   test('never offers a setting that would hold the credential', () => {

@@ -122,6 +122,18 @@ sudo update-ca-certificates
 E recarregue a janela. Não existe (e não vai existir) uma opção de "ignorar erro de certificado": o
 patch de proxy descarta o `rejectUnauthorized` do dispatcher, então a opção mentiria.
 
+### Onde fica o endpoint
+
+O campo `aiCommitMessages.endpoint` tem escopo `machine`. O VS Code esconde settings `machine` da
+aba **User** numa sessão remota — elas aparecem na aba **Remote [WSL: Debian]**. Não é um valor
+fixo: é um valor por máquina.
+
+O escopo não é enfeite. Uma setting `machine` **não pode** ser gravada em `.vscode/settings.json`,
+então um repositório clonado não consegue apontar o teu diff staged para o servidor de outra pessoa.
+
+Para editar de qualquer aba: `AI Commit Messages: Set endpoint…`, também linkado na descrição do
+**Provider**.
+
 ### Onde entra a API key
 
 Não existe campo de chave nas settings, e isso é deliberado: `settings.json` é texto puro no disco,

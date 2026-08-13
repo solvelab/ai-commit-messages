@@ -44,6 +44,7 @@ suite('activation', () => {
       'aiCommitMessages.configure',
       'aiCommitMessages.migrateSettings',
       'aiCommitMessages.insertDefaultPrompt',
+      'aiCommitMessages.setEndpoint',
       'aiCommitMessages.setToken',
       'aiCommitMessages.clearToken',
       'aiCommitMessages.diagnose',
