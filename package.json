@@ -291,6 +291,13 @@
             "scope": "window",
             "markdownDescription": "Diff characters to send when the model's context window is unknown. When it is known, the budget is computed from it instead.",
             "order": 2
+          },
+          "aiCommitMessages.redactSecrets": {
+            "type": "boolean",
+            "default": true,
+            "scope": "window",
+            "order": 3,
+            "markdownDescription": "Mask recognizable secrets — private keys, provider tokens, JWTs and credential assignments — in the diff **before** it is sent. The value is replaced by a visible marker so the model still knows something was there."
           }
         }
       }

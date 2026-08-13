@@ -15,6 +15,7 @@ import { generateMessage, PipelineError } from '../prompt/pipeline.js'
 import { languageName } from '../prompt/languages.js'
 import { sanitize } from '../prompt/sanitize.js'
 import { packWithinBudget } from '../budget/pack.js'
+import { redactFiles } from '../redact.js'
 import { diffBudgetChars, type Settings } from '../settings.js'
 
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
@@ -115,10 +116,25 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
           log.info(`omitted from the prompt to fit ${budget} chars: ${omitted.join(', ')}`)
         }
 
+        // Last thing before the diff leaves the machine. The values never reach the log.
+        let prompted = kept
+        if (settings.redactSecrets) {
+          const redaction = redactFiles(kept)
+          prompted = redaction.files
+          if (redaction.total > 0) {
+            for (const file of redaction.byFile) {
+              log.warn(`redacted ${file.total} secret(s) in ${file.path}: ${file.kinds.join(', ')}`)
+            }
+            void vscode.window.showWarningMessage(
+              `${redaction.total} secret value(s) were masked before sending the diff.`,
+            )
+          }
+        }
+
         progress.report({ message: `${kept.length} file(s)` })
         return generateMessage(
           provider,
-          kept,
+          prompted,
           {
             model: settings.model,
             maxBodyWords: settings.maxBodyWords,
