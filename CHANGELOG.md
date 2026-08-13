@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/solvelab/ai-commit-messages/compare/v1.9.1...v1.10.0) (2026-08-13)
+
+
+### Features
+
+* **status:** mostrar o endpoint e o modelo em uso ([#74](https://github.com/solvelab/ai-commit-messages/issues/74)) ([cdfba2e](https://github.com/solvelab/ai-commit-messages/commit/cdfba2ef7120ee2c8d15e13374f88a63273d15de)), closes [#73](https://github.com/solvelab/ai-commit-messages/issues/73)
+
 ## [1.9.1](https://github.com/solvelab/ai-commit-messages/compare/v1.9.0...v1.9.1) (2026-08-13)
 
 
