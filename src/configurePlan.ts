@@ -40,7 +40,8 @@ export function planConfiguration(answers: ConfigureAnswers): ConfigureWrite[] {
   }
 
   if (answers.endpoint !== undefined) {
-    const base = normalizeBaseUrl(answers.endpoint)
+    // Same rule the runtime will use, so the preview and the stored value agree.
+    const base = normalizeBaseUrl(answers.endpoint, answers.provider ?? 'ollama')
     if (!base) {
       throw new ConfigureError(`"${answers.endpoint}" is not a valid URL.`)
     }
@@ -59,11 +60,14 @@ export function planConfiguration(answers: ConfigureAnswers): ConfigureWrite[] {
 }
 
 /** Validation for the endpoint input box, as the user types. */
-export function validateEndpointInput(value: string): string | undefined {
+export function validateEndpointInput(
+  value: string,
+  provider: ProviderId = 'ollama',
+): string | undefined {
   if (!value.trim()) {
     return 'Type the base URL of the model server, e.g. http://192.168.15.6:11434'
   }
-  if (!normalizeBaseUrl(value)) {
+  if (!normalizeBaseUrl(value, provider)) {
     return 'That is not a valid URL.'
   }
   if (/\/(api|v1)\b/i.test(value)) {

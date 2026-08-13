@@ -75,8 +75,11 @@ export class OpenAICompatProvider implements CommitProvider {
     body: unknown,
     signal?: AbortSignal,
   ): Promise<T> {
-    // Pasting the server root instead of its /v1 base is the mistake this adapter sees most.
-    const looksLikeWrongBase = !/\/v1\/?$/i.test(this.baseUrl)
+    // Pasting the server root instead of its /v1 base is the mistake this adapter sees most —
+    // but only the user can make it. A preset filled the base in itself, and `gemini` legitimately
+    // ends in `/v1beta/openai/`, so accusing it would be accusing our own data.
+    const looksLikeWrongBase =
+      this.preset.id === 'custom' && !/\/v1(beta)?(\/[^/]*)?\/?$/i.test(this.baseUrl)
     let response: Awaited<ReturnType<FetchLike>>
     try {
       response = await this.fetch(`${this.baseUrl}${path}`, {
@@ -103,11 +106,19 @@ export class OpenAICompatProvider implements CommitProvider {
         )
       }
       if (response.status === 404) {
-        // A 404 on /models means the base URL is wrong far more often than a missing model.
-        if (path === '/models' || looksLikeWrongBase) {
+        // A 404 on /models is about the endpoint, not the model — but the "/v1" hint is only true
+        // for a URL the user typed. A preset filled its own base in, and `gemini` legitimately
+        // ends in `/v1beta/openai/`.
+        if (looksLikeWrongBase) {
           throw new ProviderError(
             'http',
             `${this.baseUrl} does not answer the OpenAI API. The base URL usually ends in /v1.`,
+          )
+        }
+        if (path === '/models') {
+          throw new ProviderError(
+            'http',
+            `${this.baseUrl} did not answer /models (HTTP 404). Check that the server is running and the preset matches it.`,
           )
         }
         throw new ProviderError('model-not-found', detail)
