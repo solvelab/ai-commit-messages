@@ -11,6 +11,7 @@ import { clearToken, initSecrets, readToken, setToken } from './commands/secrets
 import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog } from './log.js'
+import { createStatusBar } from './statusBar.js'
 import { hostOf } from './endpoint.js'
 import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
 import { knownModels } from './models/catalog.js'
@@ -44,6 +45,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await clearToken(settings.provider, settings.endpoint)
     }),
   )
+
+  createStatusBar(context, CONFIGURE_COMMAND)
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(event => {

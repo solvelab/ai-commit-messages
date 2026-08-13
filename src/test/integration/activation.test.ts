@@ -17,6 +17,13 @@ suite('activation', () => {
     assert.equal(vscode.extensions.getExtension(EXTENSION_ID)?.isActive, true)
   })
 
+  // A status bar item that only appears after you already ran a command shows the configuration
+  // too late to help.
+  test('wakes up on its own, so the status bar can exist before any command runs', () => {
+    const events = vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON.activationEvents
+    assert.deepEqual(events, ['onStartupFinished'])
+  })
+
   test('the built-in git extension is available to depend on', () => {
     assert.ok(
       vscode.extensions.getExtension('vscode.git'),

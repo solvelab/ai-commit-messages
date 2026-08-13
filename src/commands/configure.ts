@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
+import { hostOf } from '../endpoint.js'
 import {
   planConfiguration,
   validateEndpointInput,
@@ -33,12 +34,17 @@ export async function configure(): Promise<void> {
   const backendPick = await vscode.window.showQuickPick(
     BACKENDS.map(backend => ({
       label: backend.label,
-      description: backend.defaultEndpoint || 'you supply the URL',
+      description:
+        backend.id === settings.backend.id
+          ? '$(check) in use'
+          : backend.defaultEndpoint || 'you supply the URL',
       detail: backend.description,
       backend,
-      picked: backend.id === settings.backend.id,
     })),
-    { title: 'AI Commit Messages (1/3)', placeHolder: 'Which backend?' },
+    {
+      title: 'AI Commit Messages (1/3)',
+      placeHolder: `Which backend? Now: ${settings.backend.label} at ${hostOf(settings.endpoint)}`,
+    },
   )
   if (!backendPick) {
     return
@@ -51,7 +57,9 @@ export async function configure(): Promise<void> {
 
   const endpoint = await vscode.window.showInputBox({
     title: 'AI Commit Messages (2/3)',
-    prompt: 'Base URL of the model server. A full endpoint is trimmed automatically.',
+    prompt:
+      `Base URL of the model server. A full endpoint is trimmed automatically. ` +
+      `Now in use: ${settings.endpoint || 'nothing configured yet'}.`,
     value: suggestedEndpoint,
     placeHolder: 'http://192.168.15.6:11434',
     validateInput: value => validateEndpointInput(value, backend.adapter),
@@ -161,7 +169,7 @@ async function pickModel(
     // Unreachable server must not block setup: the user may be configuring it before starting it.
     return vscode.window.showInputBox({
       title: 'AI Commit Messages (3/3)',
-      prompt: `No model list could be read from ${endpoint}. Type the model name.`,
+      prompt: `No model list could be read from ${endpoint}. Type the model name. Now: ${current || 'none'}.`,
       value: current,
       placeHolder: 'qwen2.5-coder:7b',
       ignoreFocusOut: true,
@@ -172,7 +180,7 @@ async function pickModel(
     ...models.map(m => ({
       label: m.label,
       ...(m.detail ? { detail: m.detail } : {}),
-      description: m.id === current ? 'current' : undefined,
+      description: m.id === current ? '$(check) in use' : undefined,
       id: m.id,
     })),
     { label: MANUAL_MODEL, id: MANUAL_MODEL },
@@ -180,7 +188,7 @@ async function pickModel(
 
   const choice = await vscode.window.showQuickPick(items, {
     title: 'AI Commit Messages (3/3)',
-    placeHolder: `${models.length} model(s) installed on the server`,
+    placeHolder: `${models.length} model(s) on ${hostOf(endpoint)} — now: ${current || 'none'}`,
   })
   if (!choice) {
     return undefined
