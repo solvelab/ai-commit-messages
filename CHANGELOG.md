@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/solvelab/ai-commit-messages/compare/v1.2.0...v1.3.0) (2026-08-13)
+
+
+### Features
+
+* **budget:** excluir arquivos gerados do orçamento de diff ([8ca13f6](https://github.com/solvelab/ai-commit-messages/commit/8ca13f62456f88329148c4e28f28ea573cfceef4))
+
 # [1.2.0](https://github.com/solvelab/ai-commit-messages/compare/v1.1.0...v1.2.0) (2026-08-13)
 
 
