@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
 import { getGitApi } from '../git/api.js'
+import { createResolverHost } from '../git/host.js'
+import { resolveRepository } from '../git/resolve.js'
 import { getLog } from '../log.js'
 
 /**
@@ -8,10 +10,6 @@ import { getLog } from '../log.js'
  *
  * The handler MUST return a promise that settles only when the work is done — the SCM action
  * runner keeps the toolbar in its running state for exactly as long as this promise is pending.
- *
- * `arg` is whatever the invoking surface hands over: a `vscode.SourceControl` from `scm/title`
- * (or `undefined` when more than one repository is visible), and nothing at all from the command
- * palette or a keybinding. Turning that into a repository is #6.
  */
 export async function generateCommitMessage(arg?: unknown): Promise<void> {
   const log = getLog()
@@ -24,7 +22,13 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
     return
   }
 
-  log.debug(`generate invoked with arg of type ${arg === undefined ? 'undefined' : typeof arg}`)
+  const { repository, source } = await resolveRepository(arg, createResolverHost(git))
+  if (!repository) {
+    log.warn('no repository resolved')
+    void vscode.window.showErrorMessage('No git repository to generate a commit message for.')
+    return
+  }
+  log.info(`repository resolved from ${source}: ${repository.rootUri.fsPath}`)
 
   await vscode.window.withProgress(
     {
@@ -36,6 +40,8 @@ export async function generateCommitMessage(arg?: unknown): Promise<void> {
       if (token.isCancellationRequested) {
         return
       }
+      // Refresh before reading state — the git extension caches it.
+      await repository.status()
       // Message generation lands in #7 (diff) → #8 (provider) → #9 (format).
       log.info('generation pipeline not wired yet')
       void vscode.window.showInformationMessage(
