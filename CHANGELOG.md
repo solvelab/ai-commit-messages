@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/solvelab/ai-commit-messages/compare/v1.4.2...v1.4.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **auth:** deduplicar header por caixa e prender a credencial ao host ([61268dc](https://github.com/solvelab/ai-commit-messages/commit/61268dc235501d9bd567475c68f5526144cbd038))
+
 ## [1.4.2](https://github.com/solvelab/ai-commit-messages/compare/v1.4.1...v1.4.2) (2026-08-13)
 
 
