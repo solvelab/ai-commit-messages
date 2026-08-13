@@ -14,6 +14,7 @@ import { DEFAULT_TIMEOUT_MS } from './net.js'
  */
 
 import { BACKENDS, DEFAULT_BACKEND_ID, resolveBackend, type AdapterId, type Backend } from './providers/catalog.js'
+import { DEFAULT_AUTH, parseAuthTemplate } from './providers/auth.js'
 
 /** Adapter ids, kept for the layers that speak to a server. Users never choose one directly. */
 export const ADAPTERS = ['ollama', 'openai-compat'] as const
@@ -36,9 +37,9 @@ export interface Settings {
   readonly maxBodyWords: number
   readonly temperature: number
   readonly timeoutMs: number
-  /** Header carrying the credential, for gateways that do not use Authorization. */
+  /** Whole header line carrying the credential, e.g. `Authorization: Bearer {token}`. */
   readonly authHeader: string
-  /** Scheme prefix. Empty sends the raw token. */
+  /** Scheme derived from the template. */
   readonly authScheme: string
   /** Extra non-sensitive headers. */
   readonly headers: Record<string, string>
@@ -197,6 +198,22 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
   }
   const provider = backend.adapter
 
+  // One field describes the whole header. The old two-field shape is still understood.
+  const templateRaw = str(raw.authHeader, '')
+  const looksLikeTemplate = templateRaw.includes(':')
+  const parsed = looksLikeTemplate
+    ? parseAuthTemplate(templateRaw)
+    : {
+        auth: {
+          header: templateRaw || DEFAULT_AUTH.header,
+          scheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULT_AUTH.scheme,
+        },
+      }
+  const auth = parsed.auth
+  if ('problem' in parsed && parsed.problem) {
+    problems.push({ key: 'authHeader', message: parsed.problem })
+  }
+
   // Provider-aware: the endpoint is normalized for the dialect that will actually be spoken.
   const endpoint = normalizeBaseUrl(str(raw.endpoint, backend.defaultEndpoint || DEFAULTS.endpoint), provider)
   if (!endpoint) {
@@ -215,9 +232,8 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       maxBodyWords: num(raw.maxBodyWords, DEFAULTS.maxBodyWords, 3, 40, 'maxBodyWords', problems),
       temperature: num(raw.temperature, DEFAULTS.temperature, 0, 1, 'temperature', problems),
       timeoutMs: num(raw.timeoutMs, DEFAULTS.timeoutMs, 1_000, 600_000, 'timeoutMs', problems),
-      authHeader: str(raw.authHeader, DEFAULTS.authHeader),
-      // Empty is meaningful here (raw token), so `str` with its blank-to-default rule is wrong.
-      authScheme: typeof raw.authScheme === 'string' ? raw.authScheme.trim() : DEFAULTS.authScheme,
+      authHeader: auth.header,
+      authScheme: auth.scheme,
       headers: readHeaders(raw.headers, problems),
       compatPreset: backend.presetId ?? DEFAULTS.compatPreset,
       redactSecrets: typeof raw.redactSecrets === 'boolean' ? raw.redactSecrets : DEFAULTS.redactSecrets,

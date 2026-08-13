@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildHeaders, DEFAULT_AUTH, formatCredential, redactToken } from './auth.js'
+import { DEFAULT_AUTH, buildHeaders, formatCredential, parseAuthTemplate, redactToken, toAuthTemplate } from './auth.js'
 
 describe('buildHeaders', () => {
   it('sends no credential when there is no token — the zero-config local case', () => {
@@ -104,5 +104,47 @@ describe('redactToken', () => {
 
   it('says none when there is nothing', () => {
     expect(redactToken(undefined)).toBe('none')
+  })
+})
+
+describe('parseAuthTemplate', () => {
+  it('reads the whole header line as one value', () => {
+    expect(parseAuthTemplate('Authorization: Bearer {token}').auth).toEqual({
+      header: 'Authorization',
+      scheme: 'Bearer',
+    })
+  })
+
+  it('supports a gateway header with no scheme', () => {
+    expect(parseAuthTemplate('x-api-key: {token}').auth).toEqual({ header: 'x-api-key', scheme: '' })
+  })
+
+  it('supports a raw token under Authorization', () => {
+    expect(parseAuthTemplate('Authorization: {token}').auth).toEqual({
+      header: 'Authorization',
+      scheme: '',
+    })
+  })
+
+  // A header built without the credential fails at the server, far from the cause.
+  it('refuses a template with no placeholder and says why', () => {
+    const parsed = parseAuthTemplate('x-api-key: secret')
+    expect(parsed.auth).toEqual(DEFAULT_AUTH)
+    expect(parsed.problem).toContain('{token}')
+  })
+
+  it('refuses a value that is not a header line', () => {
+    const parsed = parseAuthTemplate('Bearer')
+    expect(parsed.auth).toEqual(DEFAULT_AUTH)
+    expect(parsed.problem).toContain('header line')
+  })
+
+  it('falls back to the default when empty', () => {
+    expect(parseAuthTemplate('   ').auth).toEqual(DEFAULT_AUTH)
+  })
+
+  it('round-trips the old two-field shape into a template', () => {
+    expect(toAuthTemplate({ header: 'x-api-key', scheme: '' })).toBe('x-api-key: {token}')
+    expect(toAuthTemplate(DEFAULT_AUTH)).toBe('Authorization: Bearer {token}')
   })
 })

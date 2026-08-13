@@ -167,7 +167,7 @@
               "Any other server speaking /v1/chat/completions."
             ],
             "scope": "window",
-            "markdownDescription": "Backend to generate with. Choosing one decides which of the settings below matter: **Endpoint** and **Model** always; **Set token…** only for a hosted endpoint or a gateway.",
+            "markdownDescription": "Backend to generate with. The endpoint below is filled in for you when you pick one.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — the key is stored in the OS secret store, never in this file.",
             "order": 1,
             "enumItemLabels": [
               "Ollama",
@@ -186,7 +186,7 @@
             "type": "string",
             "default": "http://127.0.0.1:11434",
             "scope": "machine",
-            "markdownDescription": "**Base URL** of the server, e.g. `http://192.168.15.6:11434` for Ollama or `https://api.groq.com/openai/v1` for Groq — not a full endpoint. Leave the value the backend suggests unless your server lives elsewhere.\n\nMachine-scoped on purpose: it must differ between local and remote, it is never synced, and a cloned repository must not be able to redirect your staged diff.\n\n_Because of that scope, in a remote session (WSL, SSH, container) this setting lives in the_ **Remote** _tab, not_ **User**. _Easier route:_ run **AI Commit Messages: Configure…**",
+            "markdownDescription": "**Base URL** of the server — not a full endpoint. Leave the value your backend suggests unless your server lives elsewhere.\n\n▸ **[Set API key…](command:aiCommitMessages.setToken)** — the key is stored in the OS secret store, never in this file.\n\n_Machine-scoped: it must differ between local and remote, is never synced, and a cloned repository must not be able to redirect your staged diff. Because of that, in a remote session this setting lives in the_ **Remote** _tab._",
             "order": 2
           },
           "aiCommitMessages.model": {
@@ -204,30 +204,6 @@
             "scope": "window",
             "markdownDescription": "Request deadline in milliseconds. Loading a cold model can take more than 30s.",
             "order": 4
-          },
-          "aiCommitMessages.authHeader": {
-            "type": "string",
-            "default": "Authorization",
-            "scope": "window",
-            "order": 5,
-            "markdownDescription": "Only used when a token is stored. Change it for a gateway that expects something else, e.g. `x-api-key`."
-          },
-          "aiCommitMessages.authScheme": {
-            "type": "string",
-            "default": "Bearer",
-            "scope": "window",
-            "order": 6,
-            "markdownDescription": "Only used when a token is stored. Leave **empty** to send the raw token, which some gateways require."
-          },
-          "aiCommitMessages.headers": {
-            "type": "object",
-            "default": {},
-            "scope": "window",
-            "order": 7,
-            "additionalProperties": {
-              "type": "string"
-            },
-            "markdownDescription": "Extra HTTP headers sent with every request. For **non-sensitive** values only — put credentials in the secret store."
           }
         }
       },
@@ -349,6 +325,23 @@
             "scope": "window",
             "order": 4,
             "markdownDescription": "Files matching these globs contribute only their header to the prompt, not their contents. A lockfile must not push the actual change out of the budget — but the model still learns it changed. Supports `*`, `**` and `?`."
+          },
+          "aiCommitMessages.authHeader": {
+            "type": "string",
+            "default": "Authorization: Bearer {token}",
+            "scope": "window",
+            "order": 5,
+            "markdownDescription": "**Advanced.** Whole header line that carries the key, with `{token}` where the key goes.\n\nLeave as is for OpenAI, Groq, OpenRouter and Gemini. Change it only for a gateway that expects something else:\n\n- `x-api-key: {token}`\n- `Authorization: {token}` (raw, no scheme)\n\nThe key itself is **never** stored here — use **[Set API key…](command:aiCommitMessages.setToken)**."
+          },
+          "aiCommitMessages.headers": {
+            "type": "object",
+            "default": {},
+            "scope": "window",
+            "order": 6,
+            "additionalProperties": {
+              "type": "string"
+            },
+            "markdownDescription": "**Advanced.** Extra headers sent with every request, for gateways that need routing or tenant fields.\n\nNever put the key here — it is plaintext on disk and synced. Use **[Set API key…](command:aiCommitMessages.setToken)**."
           }
         }
       }

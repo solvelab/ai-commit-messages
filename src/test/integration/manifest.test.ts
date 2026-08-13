@@ -7,7 +7,7 @@ import { EXTENSION_ID } from '../../meta.js'
 interface ConfigNode {
   title: string
   order: number
-  properties: Record<string, { order?: number; scope?: string }>
+  properties: Record<string, { order?: number; scope?: string; markdownDescription?: string }>
 }
 
 function configuration(): ConfigNode[] {
@@ -40,9 +40,6 @@ suite('settings layout', () => {
       'aiCommitMessages.endpoint',
       'aiCommitMessages.model',
       'aiCommitMessages.timeoutMs',
-      'aiCommitMessages.authHeader',
-      'aiCommitMessages.authScheme',
-      'aiCommitMessages.headers',
     ])
   })
 
@@ -68,14 +65,50 @@ suite('settings layout', () => {
       'temperature',
       'timeoutMs',
       'authHeader',
-      'authScheme',
       'headers',
       'redactSecrets',
       'excludeGlobs',
     ]) {
       assert.ok(keys.includes(`aiCommitMessages.${key}`), `aiCommitMessages.${key} disappeared`)
     }
-    assert.equal(keys.length, 14)
+    assert.equal(keys.length, 13)
+  })
+
+  // The two knobs nobody else needs live at the bottom, where expert knobs belong. The pair
+  // `authHeader` + `authScheme` used to sit in Connection and read as "where the key goes" —
+  // it never was, and the key itself has no setting at all.
+  test('keeps the header knobs in Advanced, last', () => {
+    const advanced = configuration().find(n => n.title.endsWith('Advanced'))
+    assert.ok(advanced)
+    const keys = Object.entries(advanced.properties)
+      .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0))
+      .map(([key]) => key)
+    assert.deepEqual(keys.slice(-2), ['aiCommitMessages.authHeader', 'aiCommitMessages.headers'])
+  })
+
+  // Verified in settingsTree.ts: descriptions render with `isTrusted: true`, so a command link is
+  // clickable. It is the only way the settings page can point at a secret it must not hold.
+  test('points at the key command from the settings page', () => {
+    const linked = configuration()
+      .flatMap(node => Object.entries(node.properties))
+      .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.setToken'))
+      .map(([key]) => key)
+    assert.deepEqual(linked, [
+      'aiCommitMessages.provider',
+      'aiCommitMessages.endpoint',
+      'aiCommitMessages.authHeader',
+      'aiCommitMessages.headers',
+    ])
+  })
+
+  test('never offers a setting that would hold the credential', () => {
+    const keys = configuration()
+      .flatMap(node => Object.keys(node.properties))
+      .map(key => key.replace('aiCommitMessages.', '').toLowerCase())
+    // Exact names, not a substring match: `redactSecrets` is about the diff, not about holding one.
+    for (const forbidden of ['apikey', 'token', 'secret', 'password', 'credential', 'authtoken']) {
+      assert.ok(!keys.includes(forbidden), `aiCommitMessages.${forbidden} must not exist`)
+    }
   })
 
   test('only the endpoint stays machine-scoped', () => {

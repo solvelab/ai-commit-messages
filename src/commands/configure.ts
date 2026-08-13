@@ -61,6 +61,12 @@ export async function configure(): Promise<void> {
     return
   }
 
+  // The key is asked here, in the flow, instead of leaving people to discover a command. It is
+  // still written to `SecretStorage` — the wizard only makes the door visible.
+  if (backend.requiresToken && !(await readToken(backend.adapter, endpoint))) {
+    await setToken(backend.adapter, endpoint)
+  }
+
   const model = await pickModel(backend, endpoint, settings)
   if (model === undefined) {
     return
