@@ -1,3 +1,10 @@
+## [1.4.5](https://github.com/solvelab/ai-commit-messages/compare/v1.4.4...v1.4.5) (2026-08-13)
+
+
+### Bug Fixes
+
+* **git:** descrever rename como rename e checar tamanho antes de ler ([3a6e908](https://github.com/solvelab/ai-commit-messages/commit/3a6e9089941914fede174253f11f89e8cc57a7d8))
+
 ## [1.4.4](https://github.com/solvelab/ai-commit-messages/compare/v1.4.3...v1.4.4) (2026-08-13)
 
 
