@@ -53,9 +53,35 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      # A VS Code baixada pelo `vscode-test` é ~1 GB e some a cada execução. Guardá-la evita ir à
+      # rede — que é exatamente onde o build já caiu, com ETIMEDOUT antes de a suíte começar.
+      - name: Cache the VS Code build used by the tests
+        uses: actions/cache@v4
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}-${{ hashFiles('.vscode-test.mjs') }}
+          restore-keys: vscode-test-${{ runner.os }}-
+
       # A suíte de integração sobe uma VS Code de verdade: precisa de display virtual no Linux.
+      #
+      # A repetição cobre só a falha de rede: se a suíte chegar a rodar e reprovar, o `npm test`
+      # devolve o código de saída dos testes e o passo falha na primeira tentativa. O laço só existe
+      # para o download que expira antes disso, e cada nova tentativa aparece no log.
       - name: Integration tests
-        run: xvfb-run -a npm test
+        run: |
+          for attempt in 1 2 3; do
+            if xvfb-run -a npm test; then
+              exit 0
+            fi
+            if ls -d .vscode-test/vscode-* >/dev/null 2>&1; then
+              echo "::error::the suite ran and failed — not retrying"
+              exit 1
+            fi
+            echo "::warning::attempt $attempt failed before the suite started (download); retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::the VS Code download failed three times"
+          exit 1
 
       - name: Build VSIX
         run: npx --yes @vscode/vsce package --out ai-commit-messages.vsix
