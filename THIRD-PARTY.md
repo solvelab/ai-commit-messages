@@ -4,8 +4,11 @@
 
 `media/generate-dark.svg` and `media/generate-light.svg` are derived from the `bot-message-square`
 icon of [Lucide](https://lucide.dev). The only change is the stroke colour: a file-based icon does
-not inherit the editor's theme, so each file carries the editor's own icon colour for its theme
-(`#C5C5C5` dark, `#424242` light — the defaults registered in VS Code's `baseColors.ts`).
+not inherit the editor's theme, so the colour is written into each file.
+
+- Dark: `#E98A6C`, the colour of the sparkle in this extension's logo, sampled from `logo.png`.
+- Light: `#B5502E`, the same hue closed down. The logo colour scores 2.28:1 against the light side
+  bar, below the 3:1 the WCAG asks of a graphical object; this one scores 4.56:1.
 
 Lucide is licensed under the ISC License, reproduced verbatim from
 <https://github.com/lucide-icons/lucide/blob/main/LICENSE>:
