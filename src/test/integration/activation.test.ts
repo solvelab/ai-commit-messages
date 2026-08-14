@@ -82,7 +82,10 @@ suite('activation', () => {
         | undefined
     )?.find(c => c.command === 'aiCommitMessages.cancelGeneration')
     assert.equal(spinning?.icon, '$(sync~spin)')
-    assert.equal(menu[0].group, 'navigation')
+    // Same group and order in both, so swapping the command does not move the button:
+    // menuService.ts:346-358 breaks an order tie by title, and the two titles differ.
+    assert.equal(menu[0].group, 'navigation@1')
+    assert.equal(menu[1].group, menu[0].group)
     // Every entry still targets git and nothing else.
     for (const entry of menu) {
       assert.ok(entry.when.startsWith('scmProvider == git'), entry.command)
