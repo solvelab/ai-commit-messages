@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/solvelab/ai-commit-messages/compare/v1.19.0...v1.19.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **tokens:** teto de saída que cabe o raciocínio, e aviso quando trunca ([#112](https://github.com/solvelab/ai-commit-messages/issues/112)) ([76e08fe](https://github.com/solvelab/ai-commit-messages/commit/76e08fe1a5dfff02be3367769415d279a57d0ad3)), closes [#111](https://github.com/solvelab/ai-commit-messages/issues/111)
+
 # [1.19.0](https://github.com/solvelab/ai-commit-messages/compare/v1.18.0...v1.19.0) (2026-08-14)
 
 
