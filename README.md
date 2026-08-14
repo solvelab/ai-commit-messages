@@ -30,6 +30,28 @@ you did not configure, and there is no account, no telemetry and no cloud fallba
   OpenAI-compatible endpoint — LM Studio, vLLM, llama.cpp, OpenAI, Groq, OpenRouter, Google Gemini.
 - **A model.** `qwen2.5-coder:7b` is a good default for commit messages and runs on modest hardware.
 
+## Install
+
+The extension is not on a marketplace yet — the registries are held up by third-party paperwork, not
+by the code. Until then, one line installs it:
+
+```bash
+# Linux, macOS, WSL
+curl -fsSL -o /tmp/ai-commit-messages.vsix https://github.com/solvelab/ai-commit-messages/releases/latest/download/ai-commit-messages.vsix && code --install-extension /tmp/ai-commit-messages.vsix --force
+```
+
+```powershell
+# Windows PowerShell
+iwr https://github.com/solvelab/ai-commit-messages/releases/latest/download/ai-commit-messages.vsix -OutFile $env:TEMP\ai-commit-messages.vsix; code --install-extension $env:TEMP\ai-commit-messages.vsix --force
+```
+
+That URL always points at the newest release, so the command does not rot. Run it again to update —
+VS Code only auto-updates what came from a marketplace, so this install stays on the version you put
+there until you say otherwise.
+
+In a remote session (WSL, SSH, container), run it from a terminal **on that side**, otherwise the
+extension lands on the local machine and shows up greyed out.
+
 ## Quick start
 
 1. Install the extension and reload the window.
