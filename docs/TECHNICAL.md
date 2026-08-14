@@ -104,13 +104,21 @@ Regra de costura: **nada que importa `vscode` faz lógica; nada que faz lógica 
 
 ```
 src/
-  extension.ts     activate(): canal de log, comandos, disposables
-  meta.ts          identidade (id, prefixo de settings) — espelhada do manifesto e testada
-  types/git.d.ts   cópia de extensions/git/src/api/git.d.ts (não existe pacote npm)
-  test/            suíte de integração (@vscode/test-cli, mocha dentro da VS Code)
+  extension.ts      activate(): comandos, barra de status, migrações, disposables
+  config.ts         leitura da configuração; settings.ts valida e normaliza
+  configScope.ts    onde gravar uma setting e quem está sombreando o valor
+  commands/         generate, configure, selectModel, setEndpoint, secrets, diagnose, migrate
+  ui/               painel de configuração (webview) e a regra pura de quais campos ele mostra
+  providers/        adaptador Ollama, adaptador OpenAI-compatible, catálogo de backends, auth
+  prompt/           template, schema, render determinístico, sanitização, validação, pipeline
+  budget/           exclusão de gerados e orçamento por arquivo
+  git/              API do git, resolução de repositório, coleta de diff
+  models/           catálogo embutido, cache e origem da lista
+  redact.ts         mascara segredos antes de o diff sair da máquina
+  net.ts            AbortSignal, ponte de CancellationToken, causa real do erro
+  types/git.d.ts    cópia de extensions/git/src/api/git.d.ts (não existe pacote npm)
+  test/integration/ suíte que sobe uma VS Code de verdade
 ```
-
-Módulos entram conforme as issues do backlog fecham (`git/`, `providers/`, `prompt/`, `budget/`).
 
 ## Build e testes
 
@@ -138,6 +146,29 @@ Um único `.github/workflows/ci.yml`, `CI/CD Pipeline`, cadeia **lint → test �
 A publicação nos registries (Marketplace + Open VSX) entra em issue própria. O job já nasce com
 `id-token: write` para `vsce publish --oidc`: PATs globais do Azure DevOps se aposentam em
 **01/12/2026**.
+
+## Decisões que vieram do uso
+
+**A configuração vive num painel próprio.** Um schema de setting não tem `when`
+(`configurationRegistry.ts`), então a página nativa não consegue esconder um campo que não se aplica
+— escolher OpenAI deixava na tela um endpoint de servidor local. O painel (`src/ui/`) reage ao
+backend: esconde o endpoint de quem tem endereço fixo, pede a chave de quem exige, e lista os modelos
+que o servidor de fato oferece, que a página nativa também não consegue (a lista de um `enum` é fixa
+no manifesto).
+
+**O endpoint deixou de ser `machine`.** Aquele escopo o escondia da aba **User** numa sessão remota,
+que é onde as pessoas configuram. A garantia que ele comprava — repositório clonado não redireciona
+o diff — passou a ser uma confirmação antes de enviar, quando o endpoint efetivo vem do repositório
+(`src/endpointTrust.ts`).
+
+**Toda gravação de setting é lida de volta.** Duas coisas ganham de uma gravação: valor de workspace,
+e valor no arquivo de usuário remoto — que a API não distingue do local, porque `globalValue` já vem
+mesclado. `src/commands/writeSetting.ts` grava onde o valor vive, espera o evento, relê e, se não
+pegou, remove e regrava uma vez. Nenhuma mensagem de sucesso sai antes da releitura.
+
+**O botão anima trocando de comando.** Um comando tem um ícone só, então o ícone girando é um segundo
+comando, alternado por chave de contexto, com a mesma `order` — sem ordem explícita o VS Code
+desempata por título (`menuService.ts`) e o botão pulava de lugar.
 
 ## Por que a mensagem não é escrita em streaming
 
