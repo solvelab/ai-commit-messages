@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formFields } from './formModel.js'
+import { formFields, modelReadPlan } from './formModel.js'
 
 describe('formFields', () => {
   it('hides the endpoint of a hosted provider and asks for the key', () => {
@@ -38,5 +38,29 @@ describe('formFields', () => {
 
   it('falls back to Ollama for an unknown backend instead of showing nothing', () => {
     expect(formFields('nonsense').backendId).toBe('ollama')
+  })
+})
+
+describe('modelReadPlan', () => {
+  // The panel used to send the request anyway and report the 401 as a rejected credential.
+  it('does not ask a hosted backend for a list without a key', () => {
+    const plan = modelReadPlan({ backendId: 'groq', hasKey: false })
+    expect(plan.ask).toBe(false)
+    expect(plan.reason).toContain('needs an API key')
+    expect(plan.reason).toContain('Groq')
+  })
+
+  it('asks once the key is stored', () => {
+    expect(modelReadPlan({ backendId: 'groq', hasKey: true })).toEqual({ ask: true })
+  })
+
+  it('asks a local backend with no key at all', () => {
+    expect(modelReadPlan({ backendId: 'ollama', hasKey: false })).toEqual({ ask: true })
+  })
+
+  it('asks every self-hosted backend without a key', () => {
+    for (const id of ['lmstudio', 'vllm', 'llamacpp', 'custom', 'ollama-openai']) {
+      expect(modelReadPlan({ backendId: id, hasKey: false }).ask, id).toBe(true)
+    }
   })
 })

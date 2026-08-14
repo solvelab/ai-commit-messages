@@ -146,7 +146,9 @@ window.addEventListener('message', event => {
   }
   if (message.type === 'models') {
     fillModels(message.models, state && state.model)
-    say(message.error ? 'Showing known models: ' + message.error : 'List read from the server.', Boolean(message.error))
+    if (!message.error) { say('List read from the server.') }
+    else if (message.error.indexOf('needs an API key') !== -1) { say(message.error, true) }
+    else { say('Showing known models — ' + message.error, true) }
     return
   }
   if (message.type === 'testResult') {
