@@ -130,12 +130,12 @@
         {
           "command": "aiCommitMessages.generate",
           "when": "scmProvider == git && !aiCommitMessages.generating",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "aiCommitMessages.cancelGeneration",
           "when": "scmProvider == git && aiCommitMessages.generating",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "aiCommitMessages.configure",
