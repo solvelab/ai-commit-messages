@@ -17,10 +17,10 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "npm"
@@ -39,10 +39,10 @@ jobs:
     needs: [lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "npm"
@@ -56,7 +56,7 @@ jobs:
       # A VS Code baixada pelo `vscode-test` é ~1 GB e some a cada execução. Guardá-la evita ir à
       # rede — que é exatamente onde o build já caiu, com ETIMEDOUT antes de a suíte começar.
       - name: Cache the VS Code build used by the tests
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .vscode-test
           key: vscode-test-${{ runner.os }}-${{ hashFiles('.vscode-test.mjs') }}
@@ -87,7 +87,7 @@ jobs:
         run: npx --yes @vscode/vsce package --out ai-commit-messages.vsix
 
       - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-commit-messages-vsix
           path: ai-commit-messages.vsix
@@ -102,13 +102,16 @@ jobs:
       new_release: ${{ steps.semantic.outputs.new_release_published }}
       version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      # A `semantic-release-action@v6` traz o semantic-release 25, que exige Node
+      # `^22.14.0 || >=24.10.0`. O "22" abaixo resolve para a 22.x mais nova, que satisfaz — trocar
+      # por uma 22 fixa e antiga quebraria o release, não os testes.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "npm"
@@ -118,7 +121,7 @@ jobs:
 
       - name: Semantic Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v6
         with:
           extra_plugins: |
             @semantic-release/changelog
@@ -143,12 +146,12 @@ jobs:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: v${{ needs.release.outputs.version }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "npm"
@@ -169,7 +172,7 @@ jobs:
         run: cp ai-commit-messages-${{ needs.release.outputs.version }}.vsix ai-commit-messages.vsix
 
       - name: Attach VSIX to the release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.release.outputs.version }}
           files: |
