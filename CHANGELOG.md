@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/solvelab/ai-commit-messages/compare/v1.16.0...v1.17.0) (2026-08-14)
+
+
+### Features
+
+* **ui:** ícone do botão na cor do logo, com variante legível no tema claro ([#94](https://github.com/solvelab/ai-commit-messages/issues/94)) ([39cc347](https://github.com/solvelab/ai-commit-messages/commit/39cc347d1422a9c2767e4e512a14bd6337e62b93)), closes [#E98A6](https://github.com/solvelab/ai-commit-messages/issues/E98A6) [#E98A6](https://github.com/solvelab/ai-commit-messages/issues/E98A6) [#B5502](https://github.com/solvelab/ai-commit-messages/issues/B5502) [#93](https://github.com/solvelab/ai-commit-messages/issues/93)
+
 # [1.16.0](https://github.com/solvelab/ai-commit-messages/compare/v1.15.1...v1.16.0) (2026-08-14)
 
 
