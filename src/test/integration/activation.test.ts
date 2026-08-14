@@ -82,8 +82,11 @@ suite('activation', () => {
         | undefined
     )?.find(c => c.command === 'aiCommitMessages.cancelGeneration')
     assert.equal(spinning?.icon, '$(sync~spin)')
-    assert.equal(menu[0].when, 'scmProvider == git')
     assert.equal(menu[0].group, 'navigation')
+    // Every entry still targets git and nothing else.
+    for (const entry of menu) {
+      assert.ok(entry.when.startsWith('scmProvider == git'), entry.command)
+    }
   })
 
   test('no proposed API is declared', () => {
