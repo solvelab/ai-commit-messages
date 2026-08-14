@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { statusLabel } from './statusLabel.js'
+import { busyLabel, statusLabel } from './statusLabel.js'
 
 const base = {
   model: 'qwen2.5-coder:7b',
@@ -50,3 +50,14 @@ describe('statusLabel', () => {
     expect(label.tooltip).not.toMatch(/sk-|Bearer|token=/)
   })
 })
+
+describe('busyLabel', () => {
+  it('spins and names the model doing the work', () => {
+    expect(busyLabel('qwen2.5-coder:7b')).toBe('$(sync~spin) Generating with qwen2.5-coder:7b…')
+  })
+
+  it('still spins with no model configured', () => {
+    expect(busyLabel('  ')).toBe('$(sync~spin) Generating…')
+  })
+})
+
