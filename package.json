@@ -4,8 +4,8 @@
   "description": "Generate git commit messages with a local or self-hosted LLM — Ollama and any OpenAI-compatible endpoint. Conventional Commits + gitmoji, offline, no telemetry.",
   "version": "0.0.0",
   "publisher": "solvelab",
-  "private": true,
   "license": "MIT",
+  "pricing": "Free",
   "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#161922",
@@ -41,13 +41,7 @@
     "qwen",
     "generate commit message"
   ],
-  "engines": {
-    "vscode": "^1.100.0"
-  },
-  "author": {
-    "name": "didevlab",
-    "url": "https://github.com/didevlab"
-  },
+  "homepage": "https://github.com/solvelab/ai-commit-messages#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/solvelab/ai-commit-messages.git"
@@ -55,14 +49,33 @@
   "bugs": {
     "url": "https://github.com/solvelab/ai-commit-messages/issues"
   },
-  "homepage": "https://github.com/solvelab/ai-commit-messages#readme",
-  "main": "./dist/extension.js",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "qna": "https://github.com/solvelab/ai-commit-messages/issues",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
   "extensionDependencies": [
     "vscode.git"
   ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "The staged diff is sent to the configured model endpoint.",
+      "restrictedConfigurations": [
+        "aiCommitMessages.endpoint",
+        "aiCommitMessages.model",
+        "aiCommitMessages.promptTemplate",
+        "aiCommitMessages.provider"
+      ]
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Generating a commit message needs a git repository on disk, which a virtual workspace does not have."
+    }
+  },
   "contributes": {
     "commands": [
       {
@@ -373,6 +386,11 @@
       }
     ]
   },
+  "private": true,
+  "author": {
+    "name": "didevlab",
+    "url": "https://github.com/didevlab"
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
@@ -402,17 +420,5 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.0",
     "vitest": "^4.1.10"
-  },
-  "capabilities": {
-    "untrustedWorkspaces": {
-      "supported": "limited",
-      "description": "The staged diff is sent to the configured model endpoint.",
-      "restrictedConfigurations": [
-        "aiCommitMessages.endpoint",
-        "aiCommitMessages.model",
-        "aiCommitMessages.promptTemplate",
-        "aiCommitMessages.provider"
-      ]
-    }
   }
 }

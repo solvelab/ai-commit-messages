@@ -77,7 +77,7 @@ Windows: variável de ambiente do usuário `OLLAMA_HOST`, sair do Ollama pela ba
 Conferir de dentro do WSL — mesmo namespace de rede da extensão:
 
 ```bash
-curl -s --max-time 5 http://192.168.15.6:11434/api/tags
+curl -s --max-time 5 http://192.168.1.10:11434/api/tags
 ```
 
 `OLLAMA_ORIGINS` **não** é necessário: a extensão faz a requisição no extension host (Node), sem
@@ -96,7 +96,7 @@ Na aba **Remote [WSL: …]** das settings:
 ```jsonc
 {
   // casamento é por SUFIXO: "192.168.15.0/24" e "192.168.*" NÃO funcionam
-  "http.noProxy": ["192.168.15.6"]
+  "http.noProxy": ["192.168.1.10"]
 }
 ```
 
