@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/solvelab/ai-commit-messages/compare/v1.14.0...v1.15.0) (2026-08-14)
+
+
+### Features
+
+* **ui:** ícone girando no próprio botão durante a geração ([#88](https://github.com/solvelab/ai-commit-messages/issues/88)) ([c410ef4](https://github.com/solvelab/ai-commit-messages/commit/c410ef4d33107b85990b6d31759d24cce5afa0bf)), closes [#85](https://github.com/solvelab/ai-commit-messages/issues/85) [#87](https://github.com/solvelab/ai-commit-messages/issues/87)
+
 # [1.14.0](https://github.com/solvelab/ai-commit-messages/compare/v1.13.1...v1.14.0) (2026-08-14)
 
 
