@@ -122,6 +122,22 @@ sudo update-ca-certificates
 E recarregue a janela. Não existe (e não vai existir) uma opção de "ignorar erro de certificado": o
 patch de proxy descarta o `rejectUnauthorized` do dispatcher, então a opção mentiria.
 
+### O painel de configuração
+
+`AI Commit Messages: Settings` — também no clique da barra de status e no link da página de settings.
+
+O formulário segue o backend escolhido, o que a página nativa não consegue fazer: um schema de
+setting não tem `when`, então lá todo campo aparece sempre. No painel, escolher OpenAI esconde o
+endpoint e pede a chave; escolher Ollama mostra o endpoint e trata a chave como opcional, que é o
+caso de gateway na frente dele. A lista de modelos é lida do servidor, com recarregar, e aceita
+nome digitado para o que a lista não trouxer. `Testar conexão` diz o que o servidor respondeu, com a
+causa quando falha.
+
+A chave digitada ali vai para o `SecretStorage` e **nunca** volta para o painel: ele só recebe
+"guardada" ou "não guardada". Ela fica presa ao host que está no formulário, não ao que estava salvo.
+
+As settings nativas continuam valendo, para quem edita `settings.json` na mão.
+
 ### Onde fica o endpoint
 
 Na página de settings, campo **Endpoint**, ao lado do Provider. Default `http://localhost:11434`,

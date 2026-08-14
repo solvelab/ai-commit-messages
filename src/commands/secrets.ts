@@ -67,6 +67,29 @@ export async function setToken(provider: ProviderId, endpoint: string): Promise<
   )
 }
 
+/**
+ * Stores a value handed over by the panel, where the input box belongs to the panel and not to us.
+ *
+ * Same rules as the command: the value goes only to `SecretStorage`, is bound to the host, and never
+ * reaches the log.
+ */
+export async function setTokenValue(
+  provider: ProviderId,
+  endpoint: string,
+  value: string,
+): Promise<void> {
+  if (!secrets) {
+    return
+  }
+  const token = value.trim()
+  if (!token) {
+    return clearToken(provider, endpoint)
+  }
+  await secrets.store(key(provider, endpoint), token)
+  getLog().info(`API key for ${hostOf(endpoint)} stored (${redactToken(token)})`)
+  void vscode.window.showInformationMessage(`API key for ${hostOf(endpoint)} saved to the secret store.`)
+}
+
 export async function clearToken(provider: ProviderId, endpoint: string): Promise<void> {
   if (!secrets) {
     return

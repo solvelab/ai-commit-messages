@@ -72,6 +72,11 @@
         "icon": "$(sparkle)"
       },
       {
+        "command": "aiCommitMessages.openSettings",
+        "title": "Settings",
+        "category": "AI Commit Messages"
+      },
+      {
         "command": "aiCommitMessages.configure",
         "title": "Configure…",
         "category": "AI Commit Messages",
@@ -174,7 +179,7 @@
               "Any other server speaking /v1/chat/completions."
             ],
             "scope": "window",
-            "markdownDescription": "Backend to generate with. Picking one suggests its endpoint.\n\n**[Configure connection…](command:aiCommitMessages.configure)** · **[Set API key…](command:aiCommitMessages.setToken)** — the key goes to the OS secret store, never to this file.",
+            "markdownDescription": "Backend to generate with. Picking one suggests its endpoint.\n\n▸ **[Open the configuration panel](command:aiCommitMessages.openSettings)** — the form there follows the backend: it hides what does not apply, lists the models your server offers, and takes the API key straight into the OS secret store.",
             "order": 1,
             "enumItemLabels": [
               "Ollama",
