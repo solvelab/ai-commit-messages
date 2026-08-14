@@ -17,8 +17,8 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    // Build/config scripts run in plain Node, outside the TypeScript sources.
-    files: ['*.js', '*.mjs', '*.mts'],
+    // Build/config scripts and the measurement script run in plain Node, outside the sources.
+    files: ['*.js', '*.mjs', '*.mts', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: { require: 'readonly', module: 'writable', process: 'readonly', console: 'readonly', __dirname: 'readonly' },
     },

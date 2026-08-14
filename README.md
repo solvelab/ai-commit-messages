@@ -73,11 +73,32 @@ the failure modes that actually show up with **local** models on **real** reposi
   as a header, because "update the lockfile" is legitimate information.
 - **Multi-root repositories resolve correctly.** No `repositories[0]`.
 - **It can be cancelled.** A 7B model on CPU can take a minute.
-- **Your diff is not casually shipped anywhere.** The endpoint setting is machine-scoped, so a
-  cloned repository cannot silently redirect your staged diff to someone else's host.
+- **Your diff is not casually shipped anywhere.** If a repository carries its own endpoint in
+  `.vscode/settings.json`, generation stops and asks first — a clone cannot silently redirect your
+  staged diff to someone else's host.
 - **When it does not work, it tells you why.** `Diagnose connection` reports the real cause —
   including the extension host's proxy patch, which is the failure nobody expects: `curl` works in
   the terminal and the extension does not.
+
+### Measured, not asserted
+
+The format this extension produces — gitmoji first, `type(scope): subject`, blank line, one short
+imperative action per body line — is not something a model returns on its own. Eight real commits
+from this repository, the same model (`qwen2.5-coder:7b`) and the same diffs, three prompting
+strategies, judged by the extension's own validator:
+
+| approach | valid | mean |
+|---|---|---|
+| plain prompt, no structure | **0/8** | 1168 ms |
+| type + summary as JSON, no body (the shape a fork would have inherited) | **0/8** | 387 ms |
+| this extension: JSON Schema, deterministic rendering, validation, one corrective retry | **8/8** | 848 ms |
+
+Read that fairly: the first two never promised this format, and the second is faster precisely
+because it emits less. What the numbers show is that the format has to be *engineered* — asking
+nicely does not produce it, and the emoji, the blank line and the word budget come from the code,
+not from the model's goodwill.
+
+Reproduce it against your own server and your own history: `scripts/baseline.mjs`.
 
 ## 🔒 Privacy
 
