@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" width="880" height="300" role="img"
+     aria-label="What happens between the staged diff and the commit message: exclude generated files and fit the budget, mask secrets, ask the model, validate the format, write the box.">
+  <title>From the staged diff to the commit message</title>
+
+  <style>
+    .card { fill: #252526; stroke: #3E3E3E; }
+    .step { fill: #E4E4E4; font: 600 13px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .note { fill: #9B9B9B; font: 10.5px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .lead { fill: #F68562; font: 600 11px system-ui, -apple-system, "Segoe UI", sans-serif;
+            letter-spacing: .08em; }
+    .mono { fill: #8C9BF9; font: 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .edge { stroke: #4A4A6A; stroke-width: 1.5; fill: none; }
+  </style>
+
+  <rect width="880" height="300" rx="6" fill="#1E1E1E"/>
+
+  <text x="32" y="38" class="lead">FROM THE STAGED DIFF TO THE COMMIT MESSAGE</text>
+  <text x="32" y="60" class="note">Every arrow crosses a boundary that costs something: tokens, privacy, or trust in the output.</text>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4A4A6A"/>
+    </marker>
+  </defs>
+
+  <!-- 1 -->
+  <rect x="32" y="88" width="150" height="76" rx="5" class="card"/>
+  <text x="46" y="112" class="step">Staged diff</text>
+  <text x="46" y="132" class="note">read per file, with</text>
+  <text x="46" y="148" class="note">untracked included</text>
+
+  <!-- 2 -->
+  <rect x="206" y="88" width="150" height="76" rx="5" class="card"/>
+  <text x="220" y="112" class="step">Budget</text>
+  <text x="220" y="132" class="note">lockfiles out, fitted</text>
+  <text x="220" y="148" class="note">to the real window</text>
+
+  <!-- 3 -->
+  <rect x="380" y="88" width="150" height="76" rx="5" class="card"/>
+  <text x="394" y="112" class="step">Redact</text>
+  <text x="394" y="132" class="note">keys, tokens, JWTs</text>
+  <text x="394" y="148" class="note">masked before it goes</text>
+
+  <!-- 4 -->
+  <rect x="554" y="88" width="150" height="76" rx="5" class="card" stroke="#F68562"/>
+  <text x="568" y="112" class="step">Your model</text>
+  <text x="568" y="132" class="note">the endpoint you set</text>
+  <text x="568" y="148" class="note">and nowhere else</text>
+
+  <!-- 5 -->
+  <rect x="728" y="88" width="120" height="76" rx="5" class="card"/>
+  <text x="742" y="112" class="step">Validate</text>
+  <text x="742" y="132" class="note">shape checked,</text>
+  <text x="742" y="148" class="note">one retry</text>
+
+  <path d="M182 126 H206" class="edge" marker-end="url(#arrow)"/>
+  <path d="M356 126 H380" class="edge" marker-end="url(#arrow)"/>
+  <path d="M530 126 H554" class="edge" marker-end="url(#arrow)"/>
+  <path d="M704 126 H728" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- the model answers structure; the extension renders the text -->
+  <path d="M788 164 V196 H120 V216" class="edge" marker-end="url(#arrow)"/>
+  <text x="330" y="188" class="note">the model answers JSON — the extension renders the message</text>
+
+  <rect x="32" y="220" width="816" height="52" rx="5" class="card"/>
+  <text x="46" y="244" class="mono">♻️ refactor: update cache store to expire entries</text>
+  <text x="46" y="262" class="note">emoji from code · blank line from code · one imperative action per line, within the word budget</text>
+</svg>
