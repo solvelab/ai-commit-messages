@@ -69,7 +69,10 @@
         "command": "aiCommitMessages.generate",
         "title": "Generate Commit Message",
         "category": "AI Commit Messages",
-        "icon": "$(sparkle)"
+        "icon": {
+          "light": "media/generate-light.svg",
+          "dark": "media/generate-dark.svg"
+        }
       },
       {
         "command": "aiCommitMessages.cancelGeneration",

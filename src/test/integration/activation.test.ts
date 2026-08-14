@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict'
+import { existsSync } from 'node:fs'
 
 import * as vscode from 'vscode'
 
@@ -89,6 +90,24 @@ suite('activation', () => {
     // Every entry still targets git and nothing else.
     for (const entry of menu) {
       assert.ok(entry.when.startsWith('scmProvider == git'), entry.command)
+    }
+  })
+
+  // A file-based icon is a path into the package: a typo or a file left out of the VSIX shows an
+  // empty button, and only at runtime.
+  test('the icon files the manifest points at exist', () => {
+    const extension = vscode.extensions.getExtension(EXTENSION_ID)
+    assert.ok(extension)
+    const generate = (
+      extension.packageJSON.contributes?.commands as
+        | { command: string; icon?: string | { light: string; dark: string } }[]
+        | undefined
+    )?.find(c => c.command === GENERATE_COMMAND)
+    const icon = generate?.icon
+    assert.ok(icon && typeof icon === 'object', 'the generate command needs light and dark icons')
+    for (const relative of [icon.light, icon.dark]) {
+      const file = vscode.Uri.joinPath(extension.extensionUri, relative)
+      assert.ok(existsSync(file.fsPath), `${relative} is missing from the package`)
     }
   })
 
