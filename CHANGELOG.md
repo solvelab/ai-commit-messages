@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/solvelab/ai-commit-messages/compare/v1.11.0...v1.11.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **config:** desfazer a duplicata entre os arquivos de usuário e mostrar a origem de cada setting ([#78](https://github.com/solvelab/ai-commit-messages/issues/78)) ([5e88798](https://github.com/solvelab/ai-commit-messages/commit/5e88798ee9874beee6740675daf28d507bc96ccc)), closes [#77](https://github.com/solvelab/ai-commit-messages/issues/77)
+
 # [1.11.0](https://github.com/solvelab/ai-commit-messages/compare/v1.10.0...v1.11.0) (2026-08-13)
 
 
