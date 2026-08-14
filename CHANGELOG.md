@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/solvelab/ai-commit-messages/compare/v1.13.1...v1.14.0) (2026-08-14)
+
+
+### Features
+
+* **ui:** mostrar que está gerando no lugar onde o clique aconteceu ([#86](https://github.com/solvelab/ai-commit-messages/issues/86)) ([04346b8](https://github.com/solvelab/ai-commit-messages/commit/04346b8bbd8cb2a2c573437c98260e91b1198d47)), closes [#85](https://github.com/solvelab/ai-commit-messages/issues/85)
+
 ## [1.13.1](https://github.com/solvelab/ai-commit-messages/compare/v1.13.0...v1.13.1) (2026-08-14)
 
 
