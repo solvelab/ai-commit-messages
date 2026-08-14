@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { diagnoseShadow, hasCustomValue, scopeOfCustomValue, targetForWrite } from './configScope.js'
+import { describeOrigin, diagnoseShadow, hasCustomValue, scopeOfCustomValue, targetForWrite } from './configScope.js'
 
 describe('scopeOfCustomValue', () => {
   it('prefers the narrowest scope, which is also the one that wins at read time', () => {
@@ -72,5 +72,18 @@ describe('diagnoseShadow', () => {
     expect(diagnoseShadow({ globalValue: 'new' }, 'new')).toBe('none')
     expect(diagnoseShadow({ workspaceValue: 'new', globalValue: 'new' }, 'new')).toBe('none')
     expect(diagnoseShadow(undefined, 'new')).toBe('none')
+  })
+})
+
+describe('describeOrigin', () => {
+  it('names the narrowest scope holding the value', () => {
+    expect(describeOrigin({ workspaceFolderValue: 'x', globalValue: 'y' })).toBe('folder settings')
+    expect(describeOrigin({ workspaceValue: 'x', globalValue: 'y' })).toContain('.vscode/settings.json')
+    expect(describeOrigin({ globalValue: 'y' })).toBe('user settings')
+  })
+
+  it('says default when nobody set it', () => {
+    expect(describeOrigin({})).toBe('default')
+    expect(describeOrigin(undefined)).toBe('default')
   })
 })

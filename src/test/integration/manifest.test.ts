@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict'
 import * as vscode from 'vscode'
 
 import { EXTENSION_ID } from '../../meta.js'
+import { SETTING_KEYS } from '../../settings.js'
 
 interface ConfigNode {
   title: string
@@ -166,6 +167,19 @@ suite('settings layout', () => {
       .map(([key]) => key)
     // Where someone typing a model name is already looking, and nowhere else.
     assert.deepEqual(linked, ['aiCommitMessages.model'])
+  })
+
+  // A key contributed in the manifest but absent from SETTING_KEYS is a setting nobody reads.
+  test('reads every setting it contributes', () => {
+    const contributed = configuration()
+      .flatMap(node => Object.keys(node.properties))
+      .map(key => key.replace('aiCommitMessages.', ''))
+    for (const key of contributed) {
+      assert.ok(
+        (SETTING_KEYS as readonly string[]).includes(key),
+        `aiCommitMessages.${key} is contributed but never read`,
+      )
+    }
   })
 
   test('never offers a setting that would hold the credential', () => {

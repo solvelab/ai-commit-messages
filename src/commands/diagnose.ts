@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
 
 import { currentSettings } from '../config.js'
+import { describeOrigin } from '../configScope.js'
+import { CONFIG_SECTION } from '../meta.js'
+import { SETTING_KEYS } from '../settings.js'
 import { buildReport, formatReport, type DiagnosticFacts } from '../diagnostics.js'
 import { getLog } from '../log.js'
 import { createProvider } from '../providers/registry.js'
@@ -59,7 +62,7 @@ export async function diagnose(): Promise<void> {
     ...(http.get<string>('proxy') ? { httpProxy: http.get<string>('proxy')! } : {}),
   })
 
-  log.info(`\n${formatReport(report)}`)
+  log.info(`\n${formatReport(report)}\n\n${settingsOrigins()}`)
   log.show(true)
 
   const hasProblem = report.lines.some(line => line.severity !== 'ok')
@@ -85,4 +88,28 @@ function describeCause(error: unknown): string {
     return error.message
   }
   return String(error)
+}
+
+/**
+ * Where each setting's value comes from.
+ *
+ * Two files can hold the same key — the local and the remote user settings — and the settings editor
+ * shows one of them per tab. Printing the value in effect next to the scope that defines it is the
+ * only way to answer "what is actually loaded" without guessing.
+ */
+function settingsOrigins(): string {
+  const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
+  const lines = SETTING_KEYS.map(key => {
+    const inspected = configuration.inspect(key)
+    const value = configuration.get(key)
+    return `  ${key}: ${format(value)}  [${describeOrigin(inspected)}]`
+  })
+  return ['Settings in effect', ...lines].join('\n')
+}
+
+function format(value: unknown): string {
+  if (typeof value === 'string') {
+    return value || '(empty)'
+  }
+  return JSON.stringify(value)
 }
