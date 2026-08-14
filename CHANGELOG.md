@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/solvelab/ai-commit-messages/compare/v1.13.0...v1.13.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ui:** não culpar uma credencial que não existe, e carregar a lista ao salvar a chave ([#84](https://github.com/solvelab/ai-commit-messages/issues/84)) ([8986d3d](https://github.com/solvelab/ai-commit-messages/commit/8986d3d34830a0d1f956f74610ce7b7dab2f52db)), closes [#83](https://github.com/solvelab/ai-commit-messages/issues/83)
+
 # [1.13.0](https://github.com/solvelab/ai-commit-messages/compare/v1.12.0...v1.13.0) (2026-08-14)
 
 
