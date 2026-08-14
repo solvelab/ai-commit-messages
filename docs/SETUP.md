@@ -136,6 +136,20 @@ O que aquele escopo comprava era impedir que um repositório clonado gravasse en
 se o endpoint efetivo vier do repositório e for diferente do teu, a extensão pergunta antes de
 mandar qualquer coisa, uma vez por endpoint. Recusou, a geração é cancelada.
 
+### A mesma setting aparecendo com dois valores
+
+Sessão remota tem **dois** arquivos de settings de usuário: o local e o remoto. Os dois podem conter
+a mesma chave, o remoto ganha, e a aba **User** mostra o local — daí o selo *(Modified in Remote)*
+com um valor na tela e outro em uso.
+
+Isso é resíduo de quando `endpoint`, `model` e `provider` tinham escopo `machine`, que gravava no
+arquivo remoto. Da v1.12 em diante a extensão desfaz isso sozinha na primeira ativação: move o valor
+em uso para o arquivo que a aba User mostra, sem mudar o valor. Cópia vinda de
+`.vscode/settings.json` não é tocada.
+
+Para ver de onde cada setting vem, rode `AI Commit Messages: Diagnose connection` — o relatório
+termina com a lista de todas as settings, o valor em uso e a origem.
+
 ### Onde entra a API key
 
 Não existe campo de chave nas settings, e isso é deliberado: `settings.json` é texto puro no disco,

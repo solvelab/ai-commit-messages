@@ -81,3 +81,20 @@ export function diagnoseShadow<T>(inspected: InspectedValue<T> | undefined, want
   }
   return 'none'
 }
+
+/** Where the value in effect comes from, for a report someone can act on. */
+export function describeOrigin<T>(inspected: InspectedValue<T> | undefined): string {
+  const scope = scopeOfCustomValue(inspected)
+  switch (scope) {
+    case 'workspaceFolder':
+      return 'folder settings'
+    case 'workspace':
+      return 'workspace settings (.vscode/settings.json)'
+    case 'global':
+      // The API merges the local and remote user files into one value and offers no way to tell
+      // them apart, so claiming one of them would be a guess.
+      return 'user settings'
+    default:
+      return 'default'
+  }
+}

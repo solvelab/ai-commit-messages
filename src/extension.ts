@@ -12,13 +12,13 @@ import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog, getLog } from './log.js'
 import { createStatusBar } from './statusBar.js'
-import { writeSetting } from './commands/writeSetting.js'
 import { hostOf } from './endpoint.js'
 import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
 import { knownModels } from './models/catalog.js'
 import { modelBelongs } from './models/belongs.js'
 
-const ENDPOINT_ADOPTED_KEY = 'endpointAdoptedIntoVisibleScope'
+// A new key: the previous run marked itself done while its condition could never be true.
+const COLLAPSED_KEY = 'settingsCollapsedIntoVisibleScope.v2'
 
 export const GENERATE_COMMAND = `${CONFIG_SECTION}.generate`
 export const MIGRATE_COMMAND = `${CONFIG_SECTION}.migrateSettings`
@@ -31,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   initSecrets(context)
   initModelCache(context)
   initEndpointConfirmations(context)
-  void adoptEndpointIntoVisibleScope(context)
+  void collapseDuplicatedSettings(context)
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
@@ -141,33 +141,50 @@ async function warnAboutMissingKey(): Promise<void> {
 }
 
 /**
- * Moves an endpoint left in the remote settings file into the one the User tab shows.
+ * Collapses a key duplicated across the two user settings files into the one the User tab shows.
  *
- * `endpoint` was `machine`-scoped until now, so its value was written to the remote settings file.
- * Changing the scope alone would not move it: `configurationService.ts:1135-1141` keeps sending the
- * write to the remote file while a remote value exists — and the User tab, which shows the local
- * file, would display an empty box for someone who has had an endpoint configured all along.
+ * `endpoint`, `model` and `provider` were machine-scoped once, so their values were written to the
+ * remote settings file. Relaxing the scope does not move them: while a remote value exists, VS Code
+ * keeps resolving a user write to that file (`configurationService.ts:1135-1141`), and the remote
+ * value wins the merge. The User tab — which shows the local file — then displays one value while
+ * the extension uses another, with a "Modified in Remote" badge as the only clue.
  *
- * Runs once. Only touches the value when the local file does not already carry it.
+ * The lever is the write target itself. `configurationService.ts:347` keeps a single target when one
+ * is given, so `update(key, undefined, Global)` deletes exactly the file VS Code resolves USER to —
+ * the remote one while it holds a value. Writing the same value back then lands in the local file,
+ * because no remote value remains. The value never changes; only where it lives.
+ *
+ * A value coming from the repository is left alone: that copy belongs to the repository.
  */
-async function adoptEndpointIntoVisibleScope(context: vscode.ExtensionContext): Promise<void> {
-  if (context.globalState.get<boolean>(ENDPOINT_ADOPTED_KEY)) {
+async function collapseDuplicatedSettings(context: vscode.ExtensionContext): Promise<void> {
+  if (context.globalState.get<boolean>(COLLAPSED_KEY)) {
     return
   }
+  await context.globalState.update(COLLAPSED_KEY, true)
 
-  const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
-  const inspected = configuration.inspect<string>('endpoint')
-  const effective = configuration.get<string>('endpoint')?.trim()
+  const log = getLog()
+  for (const key of ['endpoint', 'model', 'provider']) {
+    const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION)
+    const inspected = configuration.inspect<string>(key)
+    if (inspected?.workspaceValue !== undefined || inspected?.workspaceFolderValue !== undefined) {
+      continue
+    }
 
-  // Nothing configured, or already where it shows: nothing to do.
-  if (effective && effective !== inspected?.defaultValue && !inspected?.globalValue) {
-    const written = await writeSetting('endpoint', effective)
-    getLog().info(
-      written.ok
-        ? `endpoint ${effective} adopted into the visible scope`
-        : `endpoint ${effective} could not be adopted (${written.shadow})`,
+    const effective = configuration.get<string>(key)?.trim()
+    if (!effective || effective === inspected?.defaultValue) {
+      continue
+    }
+
+    await configuration.update(key, undefined, vscode.ConfigurationTarget.Global)
+    await vscode.workspace
+      .getConfiguration(CONFIG_SECTION)
+      .update(key, effective, vscode.ConfigurationTarget.Global)
+
+    const now = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(key)
+    log.info(
+      now === effective
+        ? `${key} collapsed into a single user copy (${effective})`
+        : `${key} collapse left ${String(now)} instead of ${effective}`,
     )
   }
-
-  await context.globalState.update(ENDPOINT_ADOPTED_KEY, true)
 }

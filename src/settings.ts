@@ -51,6 +51,30 @@ export interface Settings {
   readonly excludeGlobs: readonly string[]
 }
 
+/**
+ * Every key read from the configuration, in the order the settings page shows them.
+ *
+ * One list, used both to read the configuration and to report where each value comes from —
+ * a key present in the manifest but missing here would be a setting nobody reads.
+ */
+export const SETTING_KEYS = [
+  'provider',
+  'endpoint',
+  'model',
+  'authHeader',
+  'headers',
+  'timeoutMs',
+  'language',
+  'promptTemplate',
+  'maxBodyWords',
+  'temperature',
+  'maxDiffChars',
+  'redactSecrets',
+  'excludeGlobs',
+  // Read for compatibility with the shape that shipped before the single backend list.
+  'compatPreset',
+] as const
+
 export const DEFAULTS: Settings = {
   backend: resolveBackend(DEFAULT_BACKEND_ID),
   provider: 'ollama',
