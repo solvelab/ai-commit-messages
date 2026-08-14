@@ -123,6 +123,19 @@ Para ver o que o resolvedor decidiu: **Developer: Set Log Level…** → `Trace`
 Carregar o modelo na memória pode passar de 30 s. O timeout default é generoso por isso; depois do
 primeiro uso o modelo fica residente por 5 minutos (`keep_alive` do Ollama).
 
+### A resposta volta cortada no meio
+
+O log diz `The reply was cut off by the token limit. Raise aiCommitMessages.maxOutputTokens.` e o
+`raw model reply` mostra um JSON que termina no meio de uma frase.
+
+O teto de saída não sobrou para a resposta. Num endpoint OpenAI-compatible, um modelo de raciocínio
+gasta esse mesmo teto *pensando* antes de escrever: medido contra um gateway real,
+`gemini-2.5-flash` queimou ~490 tokens de raciocínio e sobraram 18 para o texto.
+
+O default automático já é 2048 nesses backends. Se ainda cortar, suba
+`aiCommitMessages.maxOutputTokens` — `0` significa "o default do backend", e qualquer valor entre
+128 e 32768 vale como teto explícito.
+
 ### TLS na frente do Ollama
 
 Instale a CA no *trust store* do sistema, dentro do WSL:

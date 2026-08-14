@@ -86,7 +86,7 @@ suite('settings layout', () => {
     ]) {
       assert.ok(keys.includes(`aiCommitMessages.${key}`), `aiCommitMessages.${key} disappeared`)
     }
-    assert.equal(keys.length, 13)
+    assert.equal(keys.length, 14)
   })
 
   // Both headers describe how the request reaches the server, so they belong next to the provider
@@ -99,6 +99,8 @@ suite('settings layout', () => {
       .map(([key]) => key)
     assert.deepEqual(keys, [
       'aiCommitMessages.temperature',
+      // Both shape the reply; the diff budget is sized against this one, so it comes before it.
+      'aiCommitMessages.maxOutputTokens',
       'aiCommitMessages.maxDiffChars',
       'aiCommitMessages.redactSecrets',
       'aiCommitMessages.excludeGlobs',

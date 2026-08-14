@@ -8,7 +8,7 @@ import {
 } from './commit.js'
 import { buildSystemPrompt, buildUserPrompt, type DiffFile, type PromptLanguage } from './template.js'
 import { correctionFor, validateCommitMessage, type ValidationProblem } from './validate.js'
-import type { CommitProvider, GenerateResult } from '../providers/types.js'
+import { isTruncated, type CommitProvider, type GenerateResult } from '../providers/types.js'
 
 /**
  * Diff in, commit message out.
@@ -23,7 +23,11 @@ export interface PipelineOptions {
   readonly maxBodyWords?: number
   readonly systemTemplate?: string
   readonly temperature?: number
-  readonly maxTokens?: number
+  /**
+   * Tokens the reply may use. Required on purpose: a default living here would be a second number
+   * governing the same thing the diff budget already sizes itself against.
+   */
+  readonly maxTokens: number
   readonly contextTokens?: number
   readonly suppressThinking?: boolean
   readonly repository?: string
@@ -42,7 +46,18 @@ export interface PipelineOutcome {
   readonly droppedBodyEntries: readonly string[]
   readonly degradedToText: boolean
   readonly problems: readonly ValidationProblem[]
+  /** Why the model stopped, when the backend said. Logged, never acted on when the reply is good. */
+  readonly finishReason?: string
 }
+
+/**
+ * Shown when the backend says it stopped at the limit.
+ *
+ * It names the setting because the previous message — "the model did not return a usable commit
+ * message" — sent people looking at the model for a ceiling this extension had set.
+ */
+export const TRUNCATED_MESSAGE =
+  'The reply was cut off by the token limit. Raise aiCommitMessages.maxOutputTokens.'
 
 export class PipelineError extends Error {
   constructor(
@@ -164,7 +179,7 @@ export async function generateMessage(
     system,
     user,
     schema: commitSchema(maxBodyWords),
-    maxTokens: options.maxTokens ?? 512,
+    maxTokens: options.maxTokens,
     temperature: options.temperature ?? 0,
     ...(options.contextTokens ? { contextTokens: options.contextTokens } : {}),
     ...(options.suppressThinking ? { suppressThinking: true } : {}),
@@ -183,6 +198,7 @@ export async function generateMessage(
         droppedBodyEntries: [],
         degradedToText: first.degradedToText,
         problems: [],
+        ...(first.finishReason ? { finishReason: first.finishReason } : {}),
       }
     }
     return retry(provider, request, options, validation.problems, first, signal)
@@ -206,6 +222,12 @@ async function retry(
   previous: GenerateResult,
   signal?: AbortSignal,
 ): Promise<PipelineOutcome> {
+  // A reply cut off at the limit will be cut off again at the same limit. Asking twice buys the
+  // user nothing but the wait, and the failure it ends in blames the wrong side.
+  if (isTruncated(previous.finishReason)) {
+    throw new PipelineError(TRUNCATED_MESSAGE, previous.text, problems)
+  }
+
   // Exactly one corrective attempt: a model that ignored the schema twice will not improve on a
   // third identical ask, and each attempt costs the user real seconds.
   const second = await provider.generate(
@@ -215,7 +237,9 @@ async function retry(
   const draft = toDraft(second, options.sanitize)
   if (!draft) {
     throw new PipelineError(
-      'The model did not return a usable commit message.',
+      isTruncated(second.finishReason)
+        ? TRUNCATED_MESSAGE
+        : 'The model did not return a usable commit message.',
       second.text || previous.text,
       problems,
     )
@@ -246,5 +270,6 @@ async function retry(
     droppedBodyEntries: dropped,
     degradedToText: second.degradedToText,
     problems: [],
+    ...(second.finishReason ? { finishReason: second.finishReason } : {}),
   }
 }

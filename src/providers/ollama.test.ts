@@ -7,6 +7,7 @@ import {
   OllamaProvider,
   readContextLength,
 } from './ollama.js'
+import { MAX_OUTPUT_TOKENS_BY_ADAPTER } from '../settings.js'
 import { ProviderError, type FetchLike } from './types.js'
 
 function jsonFetch(bodies: unknown[] | unknown, status = 200): FetchLike {
@@ -328,5 +329,41 @@ describe('optional credential (gateway in front of Ollama)', () => {
         provider(jsonFetch({ error: 'denied' }, status)).listModels(),
       ).rejects.toMatchObject({ code: 'unauthorized' })
     }
+  })
+})
+
+describe('done_reason', () => {
+  it('carries the stop reason out, so `length` can be told from a broken reply', async () => {
+    const fetchImpl = jsonFetch({
+      message: { content: '{"type":"chore"' },
+      done_reason: 'length',
+    })
+    const result = await provider(fetchImpl).generate({
+      model: 'm',
+      system: 's',
+      user: 'u',
+      maxTokens: 512,
+      temperature: 0,
+    })
+    expect(result.finishReason).toBe('length')
+  })
+
+  it('leaves it absent when the server reports none', async () => {
+    const fetchImpl = jsonFetch({ message: { content: '{"type":"feat"}' } })
+    const result = await provider(fetchImpl).generate({
+      model: 'm',
+      system: 's',
+      user: 'u',
+      maxTokens: 512,
+      temperature: 0,
+    })
+    expect(result.finishReason).toBeUndefined()
+
+    // The automatic cap for this adapter, arriving where Ollama reads it.
+    const init = (fetchImpl as unknown as { mock: { calls: [string, { body: string }][] } }).mock
+      .calls[0][1]
+    expect((JSON.parse(init.body) as { options: { num_predict: number } }).options.num_predict).toBe(
+      MAX_OUTPUT_TOKENS_BY_ADAPTER.ollama,
+    )
   })
 })

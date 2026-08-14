@@ -330,6 +330,15 @@
             "markdownDescription": "Sampling temperature. `0` is the right default for structured output.",
             "order": 1
           },
+          "aiCommitMessages.maxOutputTokens": {
+            "type": "number",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 32768,
+            "scope": "window",
+            "markdownDescription": "Tokens the reply may use. `0` takes the backend's own default: **2048** for an OpenAI-compatible endpoint, **512** for Ollama. A reasoning model spends this budget thinking *before* it writes, so a tight limit comes back as a commit message cut in half.",
+            "order": 2
+          },
           "aiCommitMessages.maxDiffChars": {
             "type": "number",
             "default": 4000,
@@ -337,13 +346,13 @@
             "maximum": 500000,
             "scope": "window",
             "markdownDescription": "Diff characters to send when the model's context window is unknown. When it is known, the budget is computed from it instead.",
-            "order": 2
+            "order": 3
           },
           "aiCommitMessages.redactSecrets": {
             "type": "boolean",
             "default": true,
             "scope": "window",
-            "order": 3,
+            "order": 4,
             "markdownDescription": "Mask recognizable secrets — private keys, provider tokens, JWTs and credential assignments — in the diff **before** it is sent. The value is replaced by a visible marker so the model still knows something was there."
           },
           "aiCommitMessages.excludeGlobs": {
@@ -379,7 +388,7 @@
               "*.pdf"
             ],
             "scope": "window",
-            "order": 4,
+            "order": 5,
             "markdownDescription": "Files matching these globs contribute only their header to the prompt, not their contents. A lockfile must not push the actual change out of the budget — but the model still learns it changed. Supports `*`, `**` and `?`."
           }
         }

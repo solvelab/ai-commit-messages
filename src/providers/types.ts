@@ -37,6 +37,21 @@ export interface GenerateResult {
   readonly thinking?: string
   /** True when the structured path was refused and plain text was used instead. */
   readonly degradedToText: boolean
+  /** Why the model stopped, verbatim from the backend. Absent when it reports none. */
+  readonly finishReason?: string
+}
+
+/**
+ * Stop reasons that mean the reply was cut off by the token limit.
+ *
+ * One list for every dialect: OpenAI answers `length`, several gateways answer `max_tokens` or
+ * `max_output_tokens`, and Ollama's `done_reason` is `length`. Telling truncation apart from a
+ * model that ignored the schema is the difference between "raise the limit" and "the model failed".
+ */
+const TRUNCATED_REASONS = ['length', 'max_tokens', 'max_output_tokens', 'max_completion_tokens']
+
+export function isTruncated(finishReason: string | undefined): boolean {
+  return typeof finishReason === 'string' && TRUNCATED_REASONS.includes(finishReason.trim().toLowerCase())
 }
 
 export interface CommitProvider {

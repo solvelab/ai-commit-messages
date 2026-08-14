@@ -238,6 +238,8 @@ export class OpenAICompatProvider implements CommitProvider {
       text,
       // Some gateways surface the reasoning trace in a sibling field rather than inline.
       ...(choice?.message?.reasoning ? { thinking: choice.message.reasoning } : {}),
+      // Carried out so the pipeline can tell a truncated reply from a malformed one.
+      ...(choice?.finish_reason ? { finishReason: choice.finish_reason } : {}),
       degradedToText: false,
     }
   }

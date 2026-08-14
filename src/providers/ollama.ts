@@ -67,6 +67,8 @@ export function isStructuredOutputRefusal(message: string): boolean {
 
 interface OllamaChatResponse {
   message?: { content?: string; thinking?: string }
+  /** Why generation stopped. `length` means `num_predict` was reached. */
+  done_reason?: string
   error?: string
 }
 
@@ -251,7 +253,12 @@ export class OllamaProvider implements CommitProvider {
       )
     }
 
-    return { text, thinking: response.message?.thinking, degradedToText: false }
+    return {
+      text,
+      thinking: response.message?.thinking,
+      ...(response.done_reason ? { finishReason: response.done_reason } : {}),
+      degradedToText: false,
+    }
   }
 }
 

@@ -203,13 +203,14 @@ async function runGeneration(
         const contextTokens = usableContextTokens(reportedContext)
         log.info(
           `model ${settings.model}: reported=${reportedContext ?? 'unknown'} ` +
-            `usable=${contextTokens ?? 'unknown'} thinking=${thinking}`,
+            `usable=${contextTokens ?? 'unknown'} thinking=${thinking} ` +
+            `maxOutputTokens=${settings.maxOutputTokens}`,
         )
 
         const budget = diffBudgetChars({
           ...(contextTokens ? { contextTokens } : {}),
           systemPromptChars: 1400,
-          maxOutputTokens: 512,
+          maxOutputTokens: settings.maxOutputTokens,
           fallbackChars: settings.maxDiffChars,
         })
         const { kept, omitted, excluded, invalidGlobs } = packWithinBudget(changes.files, budget, {
@@ -247,6 +248,7 @@ async function runGeneration(
           {
             model: settings.model,
             maxBodyWords: settings.maxBodyWords,
+            maxTokens: settings.maxOutputTokens,
             temperature: settings.temperature,
             systemTemplate: settings.promptTemplate,
             language: { tag: settings.language, name: languageName(settings.language) },
@@ -277,7 +279,10 @@ async function runGeneration(
         return
       }
 
-      const { message, retried, degradedToText, droppedBodyEntries } = outcome.value
+      const { message, retried, degradedToText, droppedBodyEntries, finishReason } = outcome.value
+      if (finishReason) {
+        log.info(`the model stopped because: ${finishReason}`)
+      }
       if (retried) {
         log.info('the first reply broke the format; a corrective retry was used')
       }
