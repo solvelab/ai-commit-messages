@@ -64,3 +64,16 @@ function describeKey(input: StatusInput): string {
   }
   return input.hasKey ? 'stored for this host' : 'missing — this backend needs one'
 }
+
+/**
+ * What the status bar says while a message is being generated.
+ *
+ * `sync~spin` is a theme icon with the spin modifier, which the status bar renders animated. The
+ * first request to a cold model can pass 30 s, and a button that looks identical before and after
+ * the click reads as a click that did not register.
+ */
+export function busyLabel(model: string): string {
+  const name = model.trim()
+  return name ? `$(sync~spin) Generating with ${name}…` : '$(sync~spin) Generating…'
+}
+

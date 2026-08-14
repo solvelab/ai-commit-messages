@@ -9,6 +9,7 @@ import { createResolverHost } from '../git/host.js'
 import { resolveRepository } from '../git/resolve.js'
 import { endpointTrust } from '../endpointTrust.js'
 import { getLog } from '../log.js'
+import { markBusy } from '../statusBar.js'
 import { CONFIG_SECTION } from '../meta.js'
 import { withAbort } from '../net.js'
 import { readToken } from './secrets.js'
@@ -80,6 +81,42 @@ async function generateForRepository(
 ): Promise<void> {
   const log = getLog()
 
+  // Three indicators, because no single one does the job: `SourceControl` marks the view where the
+  // button was clicked but cannot be cancelled, the status bar spins with a theme icon, and only
+  // `Notification` carries a cancel button (`vscode.d.ts:13014-13057`).
+  const restoreStatus = markBusy(settings.model)
+  const done = withSourceControlProgress()
+
+  try {
+    await runGeneration(repository, settings, log)
+  } finally {
+    done()
+    restoreStatus()
+  }
+}
+
+/**
+ * Puts the spinner on the Source Control view for as long as the returned call is not made.
+ *
+ * `withProgress` owns a promise, so the promise is one this function resolves by hand — the work
+ * itself runs under the cancellable notification.
+ */
+function withSourceControlProgress(): () => void {
+  let finish = (): void => undefined
+  void vscode.window.withProgress(
+    { location: vscode.ProgressLocation.SourceControl, title: 'Generating commit message…' },
+    () => new Promise<void>(resolve => {
+      finish = resolve
+    }),
+  )
+  return () => finish()
+}
+
+async function runGeneration(
+  repository: Repository,
+  settings: Settings,
+  log: ReturnType<typeof getLog>,
+): Promise<void> {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
