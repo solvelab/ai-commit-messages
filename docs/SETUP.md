@@ -197,3 +197,37 @@ Um gateway que espere outra coisa:
 
 Sem `{token}` o valor é recusado e o default vale — um cabeçalho montado sem a chave falharia no
 servidor, longe da causa.
+
+## Publicação
+
+O pipeline publica sozinho a cada release, nos dois registries, usando o mesmo `.vsix` que anexa ao
+release do GitHub — o que se baixa daqui e o que as lojas servem são os mesmos bytes.
+
+Sem os segredos configurados, os dois passos se pulam e o job termina verde, avisando o que ficou de
+fora. É o estado antes de existirem os tokens.
+
+### Marketplace (`VSCE_PAT`)
+
+A publicação sem segredo já existe no `vsce` (`publish --oidc`), mas exige uma política de *trusted
+publishing* no portal, que ainda não aparece para este publisher — a página tem apenas **Extensions**,
+**Details** e **Members**. Enquanto isso, PAT:
+
+1. `dev.azure.com` → **Create new organization**, se não houver nenhuma: a tela de tokens vive dentro
+   de uma organização, e ela serve só para isso.
+2. Perfil → **Personal access tokens** → **New Token**
+   - **Organization: All accessible organizations** — restrito a uma organização, o token não publica.
+   - **Scopes: Custom defined → Show all scopes → Marketplace → Manage**
+3. `gh secret set VSCE_PAT --repo solvelab/ai-commit-messages`
+
+Quando o portal oferecer trusted publishing, o passo do workflow vira
+`vsce publish --oidc --packagePath …` e o segredo pode ser apagado.
+
+### Open VSX (`OVSX_PAT`)
+
+1. Login com GitHub em <https://open-vsx.org>, assinar o *Publisher Agreement*.
+2. Token em **User Settings → Access Tokens**.
+3. Criar o namespace uma vez: `npx ovsx create-namespace solvelab -p <token>`.
+4. `gh secret set OVSX_PAT --repo solvelab/ai-commit-messages`
+
+Criar o namespace **não** garante exclusividade: qualquer pessoa pode publicar nele até a propriedade
+ser reivindicada, o que é um pedido separado ao Eclipse.
