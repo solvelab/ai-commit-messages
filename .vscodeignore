@@ -3,6 +3,7 @@
 .vscode-test/**
 .vscode-test.mjs
 docs/**
+scripts/**
 openspec/**
 out/**
 src/**
