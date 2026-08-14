@@ -138,3 +138,23 @@ Um único `.github/workflows/ci.yml`, `CI/CD Pipeline`, cadeia **lint → test �
 A publicação nos registries (Marketplace + Open VSX) entra em issue própria. O job já nasce com
 `id-token: write` para `vsce publish --oidc`: PATs globais do Azure DevOps se aposentam em
 **01/12/2026**.
+
+## Por que a mensagem não é escrita em streaming
+
+A caixa de commit não recebe texto aos poucos. A decisão vem de uma limitação da API, medida em
+`src/test/integration/streaming.test.ts` contra uma VS Code de verdade.
+
+`SourceControl.inputBox.value` é o conteúdo inteiro. Não existe API de atualização parcial, então
+cada pedaço de um stream é uma **substituição completa** da caixa — inclusive do que a pessoa tiver
+digitado no intervalo. O teste escreve dois pedaços, simula alguém digitando entre eles e escreve o
+terceiro: o que foi digitado some. Não há mesclagem, só substituição.
+
+As duas saídas possíveis são piores que não ter streaming:
+
+- **Desabilitar a caixa durante a geração** impediria o atropelo, mas também impede a pessoa de
+  escrever a própria mensagem — e o motivo de o botão existir é que ela pode não querer a gerada.
+- **Escrever só no fim** é o que a extensão faz.
+
+O que se perde com isso é a sensação de progresso, e isso foi resolvido por outro caminho: o botão
+vira um ícone girando, a view do Source Control ganha o indicador, e a barra de status diz com qual
+modelo está gerando.
