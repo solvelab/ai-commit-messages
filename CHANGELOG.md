@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/solvelab/ai-commit-messages/compare/v1.15.0...v1.15.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ui:** manter o botão girando na mesma posição do botão de gerar ([#90](https://github.com/solvelab/ai-commit-messages/issues/90)) ([d7e791d](https://github.com/solvelab/ai-commit-messages/commit/d7e791d78307232bd7cdecff4fea07376595ff60)), closes [#89](https://github.com/solvelab/ai-commit-messages/issues/89)
+
 # [1.15.0](https://github.com/solvelab/ai-commit-messages/compare/v1.14.0...v1.15.0) (2026-08-14)
 
 
