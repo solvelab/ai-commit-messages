@@ -107,9 +107,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      # Já preparado para `vsce publish --oidc`: PATs globais do Azure DevOps se aposentam
-      # em 01/12/2026. A publicação nos registries entra em issue própria.
+      # Preparado para `vsce publish --oidc`, que publica sem PAT guardado: o portal da Marketplace
+      # ainda não oferece a política de trusted publishing para este publisher. Quando oferecer,
+      # basta trocar o passo abaixo por `npx --yes @vscode/vsce publish --oidc --packagePath ...`
+      # e remover o segredo. PATs globais do Azure DevOps se aposentam em 01/12/2026.
       id-token: write
+    env:
+      # Lidos no `if` de cada passo: sem o segredo, o passo é pulado em vez de quebrar o pipeline.
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,3 +143,25 @@ jobs:
           files: ai-commit-messages-${{ needs.release.outputs.version }}.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `--packagePath` publishes the file that was just attached to the release, so what people
+      # download from GitHub and what the registries serve are the same bytes.
+      - name: Publish to the Visual Studio Marketplace
+        if: env.VSCE_PAT != ''
+        run: >-
+          npx --yes @vscode/vsce publish
+          --packagePath ai-commit-messages-${{ needs.release.outputs.version }}.vsix
+
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        run: >-
+          npx --yes ovsx publish
+          --packagePath ai-commit-messages-${{ needs.release.outputs.version }}.vsix
+          --skip-duplicate
+
+      - name: Say what was skipped
+        if: env.VSCE_PAT == '' || env.OVSX_PAT == ''
+        run: |
+          echo "::notice::VSIX built and attached to the release."
+          [ -n "$VSCE_PAT" ] || echo "::notice::Marketplace publish skipped — VSCE_PAT is not set."
+          [ -n "$OVSX_PAT" ] || echo "::notice::Open VSX publish skipped — OVSX_PAT is not set." 
