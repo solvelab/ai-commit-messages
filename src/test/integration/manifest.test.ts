@@ -118,14 +118,15 @@ suite('settings layout', () => {
   })
 
   // Verified in settingsTree.ts: descriptions render with `isTrusted: true`, so a command link is
-  // clickable. It is the only way the settings page can point at a secret it must not hold.
-  test('points at the key command from the settings page', () => {
+  // clickable. The page cannot hide a field that does not apply — a setting schema has no `when` —
+  // so the one link it carries leads to the panel that can.
+  test('points at the configuration panel from the settings page', () => {
     const linked = configuration()
       .flatMap(node => Object.entries(node.properties))
-      .filter(([, schema]) => schema.markdownDescription?.includes('command:aiCommitMessages.setToken'))
+      .filter(([, schema]) =>
+        schema.markdownDescription?.includes('command:aiCommitMessages.openSettings'),
+      )
       .map(([key]) => key)
-    // One link, on the setting that opens the connection: repeating it read as different actions,
-    // and the endpoint is now a plain field that needs no link of its own.
     assert.deepEqual(linked, ['aiCommitMessages.provider'])
   })
 

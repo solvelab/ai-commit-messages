@@ -12,6 +12,7 @@ import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog, getLog } from './log.js'
 import { createStatusBar } from './statusBar.js'
+import { openSettingsPanel } from './ui/settingsPanel.js'
 import { hostOf } from './endpoint.js'
 import { CONFIG_SECTION, OUTPUT_CHANNEL_NAME } from './meta.js'
 import { knownModels } from './models/catalog.js'
@@ -23,6 +24,7 @@ const COLLAPSED_KEY = 'settingsCollapsedIntoVisibleScope.v2'
 export const GENERATE_COMMAND = `${CONFIG_SECTION}.generate`
 export const MIGRATE_COMMAND = `${CONFIG_SECTION}.migrateSettings`
 export const CONFIGURE_COMMAND = `${CONFIG_SECTION}.configure`
+export const PANEL_COMMAND = `${CONFIG_SECTION}.openSettings`
 export const INSERT_PROMPT_COMMAND = `${CONFIG_SECTION}.insertDefaultPrompt`
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -37,6 +39,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
     vscode.commands.registerCommand(MIGRATE_COMMAND, () => migrateLegacySettings(true)),
     vscode.commands.registerCommand(CONFIGURE_COMMAND, configure),
+    vscode.commands.registerCommand(PANEL_COMMAND, () => openSettingsPanel(context)),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.diagnose`, diagnose),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.selectModel`, selectModel),
     vscode.commands.registerCommand(`${CONFIG_SECTION}.setEndpoint`, setEndpoint),
@@ -51,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   )
 
-  createStatusBar(context, CONFIGURE_COMMAND)
+  createStatusBar(context, PANEL_COMMAND)
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(event => {

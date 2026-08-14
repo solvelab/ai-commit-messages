@@ -48,6 +48,7 @@ suite('activation', () => {
     )?.map(c => c.command)
     assert.deepEqual(contributed, [
       GENERATE_COMMAND,
+      'aiCommitMessages.openSettings',
       'aiCommitMessages.configure',
       'aiCommitMessages.migrateSettings',
       'aiCommitMessages.insertDefaultPrompt',
