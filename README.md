@@ -44,17 +44,45 @@ That is the whole setup. With Ollama on the same machine the defaults already po
 
 ## What you get
 
-```
-✨ feat(auth): validar o token antes de abrir a sessão
+Stage a change:
 
-adicionar verificação de expiração no middleware
-recusar token sem escopo de leitura
-registrar tentativa inválida no log de auditoria
+```diff
+--- a/src/auth/middleware.ts
++++ b/src/auth/middleware.ts
+@@
+ export function requireSession(request: Request): Session {
+-  const token = readToken(request)
+-  return decode(token)
++  const token = readToken(request)
++  const session = decode(token)
++  if (session.expiresAt < Date.now()) {
++    audit.record('session.expired', { subject: session.subject })
++    throw new Unauthorized('the session has expired')
++  }
++  return session
+ }
 ```
+
+Press the button, and the commit box gets:
+
+```
+🐛 fix: validate session expiration in auth middleware
+
+check if session expiresAt is before current time
+audit record for expired sessions
+throw Unauthorized error if session has expired
+```
+
+That is verbatim output, not a polished sample: `qwen2.5-coder:7b`, temperature 0, first attempt, no
+retry. Your model will word it differently — what does not vary is the shape.
 
 The shape is not a suggestion the model may ignore: it is **rendered by the extension** from a
 structured reply. The emoji comes from the code, the blank line is placed by the code, and every
 body line is checked against the word budget before the message reaches your commit box.
+
+The message is written in the language you configure — this page shows English because the page is
+in English; `aiCommitMessages.language` also ships a built-in prompt for `pt-BR`, and any other
+language works by writing your own prompt.
 
 ### The parts that only matter with local models
 
