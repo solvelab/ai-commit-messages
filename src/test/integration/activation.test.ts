@@ -48,6 +48,7 @@ suite('activation', () => {
     )?.map(c => c.command)
     assert.deepEqual(contributed, [
       GENERATE_COMMAND,
+      'aiCommitMessages.cancelGeneration',
       'aiCommitMessages.openSettings',
       'aiCommitMessages.configure',
       'aiCommitMessages.migrateSettings',
@@ -65,8 +66,22 @@ suite('activation', () => {
     const menu = extension?.packageJSON.contributes?.menus?.['scm/title'] as
       | { command: string; when: string; group: string }[]
       | undefined
-    assert.ok(menu && menu.length === 3, 'expected generate, configure and select-model')
+    assert.ok(menu && menu.length === 4, 'expected generate, cancel, configure and select-model')
     assert.equal(menu[0].command, GENERATE_COMMAND)
+
+    // The two swap by context key: a command has one icon, so the spinning one is a second command.
+    // Verified in menusExtensionPoint.ts:936 — the manifest icon goes through ThemeIcon.fromString,
+    // and themables.ts turns the `~spin` modifier into the animation class.
+    assert.equal(menu[0].when, 'scmProvider == git && !aiCommitMessages.generating')
+    assert.equal(menu[1].command, 'aiCommitMessages.cancelGeneration')
+    assert.equal(menu[1].when, 'scmProvider == git && aiCommitMessages.generating')
+
+    const spinning = (
+      vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON.contributes?.commands as
+        | { command: string; icon?: string }[]
+        | undefined
+    )?.find(c => c.command === 'aiCommitMessages.cancelGeneration')
+    assert.equal(spinning?.icon, '$(sync~spin)')
     assert.equal(menu[0].when, 'scmProvider == git')
     assert.equal(menu[0].group, 'navigation')
   })

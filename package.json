@@ -72,6 +72,12 @@
         "icon": "$(sparkle)"
       },
       {
+        "command": "aiCommitMessages.cancelGeneration",
+        "title": "Cancel commit message generation",
+        "category": "AI Commit Messages",
+        "icon": "$(sync~spin)"
+      },
+      {
         "command": "aiCommitMessages.openSettings",
         "title": "Settings",
         "category": "AI Commit Messages"
@@ -123,7 +129,12 @@
       "scm/title": [
         {
           "command": "aiCommitMessages.generate",
-          "when": "scmProvider == git",
+          "when": "scmProvider == git && !aiCommitMessages.generating",
+          "group": "navigation"
+        },
+        {
+          "command": "aiCommitMessages.cancelGeneration",
+          "when": "scmProvider == git && aiCommitMessages.generating",
           "group": "navigation"
         },
         {

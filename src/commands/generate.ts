@@ -24,6 +24,15 @@ import { diffBudgetChars, usableContextTokens, type Settings } from '../settings
 import type { Repository } from '../types/git.js'
 
 const CONFIRMED_ENDPOINTS_KEY = 'confirmedEndpoints'
+/** Read by the `when` clause that swaps the toolbar button for a spinning one. */
+const GENERATING_CONTEXT = 'aiCommitMessages.generating'
+
+/** Cancels the generation in flight, for the toolbar button that replaces the original one. */
+let cancelInFlight: (() => void) | undefined
+
+export function cancelGeneration(): void {
+  cancelInFlight?.()
+}
 
 let workspaceMemory: vscode.Memento | undefined
 
@@ -86,10 +95,15 @@ async function generateForRepository(
   // `Notification` carries a cancel button (`vscode.d.ts:13014-13057`).
   const restoreStatus = markBusy(settings.model)
   const done = withSourceControlProgress()
+  // Swaps the toolbar button for the spinning one: the click happened there, so that is where the
+  // answer belongs.
+  await vscode.commands.executeCommand('setContext', GENERATING_CONTEXT, true)
 
   try {
     await runGeneration(repository, settings, log)
   } finally {
+    await vscode.commands.executeCommand('setContext', GENERATING_CONTEXT, false)
+    cancelInFlight = undefined
     done()
     restoreStatus()
   }
@@ -124,6 +138,12 @@ async function runGeneration(
       cancellable: true,
     },
     async (progress, token) => {
+      // One source of cancellation for both surfaces: the notification's button and the spinning
+      // toolbar button cancel the same token.
+      const cancellation = new vscode.CancellationTokenSource()
+      token.onCancellationRequested(() => cancellation.cancel())
+      cancelInFlight = () => cancellation.cancel()
+
       await repository.status()
       const changes = await collectChanges(createCollectHost(repository))
 
@@ -163,7 +183,8 @@ async function runGeneration(
         return
       }
 
-      const outcome = await withAbort({ token, timeoutMs: settings.timeoutMs }, async signal => {
+      const abort = { token: cancellation.token, timeoutMs: settings.timeoutMs }
+      const outcome = await withAbort(abort, async signal => {
         progress.report({ message: 'reading the model' })
         // Capabilities decide the budget and whether the reasoning trace must be suppressed.
         // A failure here is not fatal: generation still works with the fallback budget.
