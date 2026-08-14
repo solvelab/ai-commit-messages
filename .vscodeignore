@@ -18,6 +18,8 @@ AGENTS.md
 CLAUDE.md
 CONTRIBUTING.md
 logo.png
+# Source artwork: only the derived icon ships.
+images/ia-commits.png
 **/*.ts
 **/*.map
 **/*.vsix

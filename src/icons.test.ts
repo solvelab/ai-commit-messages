@@ -15,15 +15,15 @@ const DARK = readFileSync('media/generate-dark.svg', 'utf8')
 const LIGHT = readFileSync('media/generate-light.svg', 'utf8')
 
 describe('button icons', () => {
-  // The colour of the sparkle in the extension logo, sampled from logo.png.
+  // The colour of the sparkle in the extension logo, sampled from the artwork itself.
   it('uses the logo colour on the dark theme', () => {
-    expect(DARK).toContain('stroke="#E98A6C"')
+    expect(DARK).toContain('stroke="#F68562"')
   })
 
-  // Same hue, closed down: the logo colour scores 2.28:1 on the light side bar, below the 3:1 the
-  // WCAG asks of a graphical object. This one scores 4.56:1.
+  // Same hue, closed down: the logo colour scores 2.24:1 on the light side bar, below the 3:1 the
+  // WCAG asks of a graphical object. This one scores 3.87:1 there and still 3.57:1 on the dark one.
   it('uses a legible variant of it on the light theme', () => {
-    expect(LIGHT).toContain('stroke="#B5502E"')
+    expect(LIGHT).toContain('stroke="#C55A36"')
   })
 
   it('never leaves currentColor in a file-based icon', () => {
