@@ -11,6 +11,8 @@ import { clearToken, initSecrets, readToken, setToken } from './commands/secrets
 import { setEndpoint } from './commands/setEndpoint.js'
 import { getGitApi } from './git/api.js'
 import { createLog, disposeLog, getLog } from './log.js'
+import { endpointForSwitch } from './providers/endpointSwitch.js'
+import { reportWriteFailure, writeSetting } from './commands/writeSetting.js'
 import { createStatusBar } from './statusBar.js'
 import { openSettingsPanel } from './ui/settingsPanel.js'
 import { hostOf } from './endpoint.js'
@@ -20,6 +22,8 @@ import { modelBelongs } from './models/belongs.js'
 
 // A new key: the previous run marked itself done while its condition could never be true.
 const COLLAPSED_KEY = 'settingsCollapsedIntoVisibleScope.v2'
+// The configuration change event does not carry the previous value, so it is kept here.
+const LAST_BACKEND_KEY = 'lastBackendId'
 
 export const GENERATE_COMMAND = `${CONFIG_SECTION}.generate`
 export const MIGRATE_COMMAND = `${CONFIG_SECTION}.migrateSettings`
@@ -34,6 +38,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   initModelCache(context)
   initEndpointConfirmations(context)
   void collapseDuplicatedSettings(context)
+  // Seeded here so the first backend change compares against what was actually configured, rather
+  // than against nothing.
+  if (!context.globalState.get<string>(LAST_BACKEND_KEY)) {
+    void context.globalState.update(LAST_BACKEND_KEY, currentSettings().settings.backend.id)
+  }
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
@@ -60,8 +69,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.workspace.onDidChangeConfiguration(event => {
       // Only the backend change matters: it is the moment a model stops existing.
       if (event.affectsConfiguration(`${CONFIG_SECTION}.provider`)) {
-        void warnAboutLeftoverModel()
-        void warnAboutMissingKey()
+        // Order matters: the endpoint moves first, so the key warning names the host that will
+        // actually receive the request.
+        void followBackend(context)
       }
     }),
   )
@@ -189,5 +199,57 @@ async function collapseDuplicatedSettings(context: vscode.ExtensionContext): Pro
         ? `${key} collapsed into a single user copy (${effective})`
         : `${key} collapse left ${String(now)} instead of ${effective}`,
     )
+  }
+}
+
+/**
+ * Keeps the rest of the configuration coherent with the backend just chosen.
+ *
+ * The address moves on its own — a backend answers where it answers, and leaving the previous one
+ * on screen reads as if the choice had been ignored. The model only gets a warning: there is no
+ * single right model for a backend, and choosing one would be guessing.
+ */
+async function followBackend(context: vscode.ExtensionContext): Promise<void> {
+  await switchEndpoint(context)
+  await warnAboutLeftoverModel()
+  await warnAboutMissingKey()
+}
+
+async function switchEndpoint(context: vscode.ExtensionContext): Promise<void> {
+  const { settings } = currentSettings()
+  const previous = context.globalState.get<string>(LAST_BACKEND_KEY)
+  await context.globalState.update(LAST_BACKEND_KEY, settings.backend.id)
+
+  const inspected = vscode.workspace.getConfiguration(CONFIG_SECTION).inspect<string>('endpoint')
+  // A repository's copy belongs to the repository; rewriting it would edit someone else's file.
+  if (inspected?.workspaceValue !== undefined || inspected?.workspaceFolderValue !== undefined) {
+    return
+  }
+
+  const decision = endpointForSwitch({
+    ...(previous ? { fromBackendId: previous } : {}),
+    toBackendId: settings.backend.id,
+    currentEndpoint: settings.endpoint,
+  })
+  if (!decision.endpoint) {
+    return
+  }
+
+  const before = settings.endpoint
+  const written = await writeSetting('endpoint', decision.endpoint)
+  if (!written.ok) {
+    return reportWriteFailure('endpoint', decision.endpoint, written)
+  }
+  getLog().info(`endpoint followed the backend: ${before} → ${decision.endpoint}`)
+
+  const choice = await vscode.window.showInformationMessage(
+    `Endpoint set to ${decision.endpoint} for ${settings.backend.label}.`,
+    'Undo',
+  )
+  if (choice === 'Undo') {
+    const undone = await writeSetting('endpoint', before)
+    if (!undone.ok) {
+      await reportWriteFailure('endpoint', before, undone)
+    }
   }
 }
