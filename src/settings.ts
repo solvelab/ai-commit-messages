@@ -35,6 +35,8 @@ export interface Settings {
   readonly promptTemplate: string
   readonly maxDiffChars: number
   readonly maxBodyWords: number
+  /** Tokens the reply may use. Already resolved: never the `0` that means "ask the backend". */
+  readonly maxOutputTokens: number
   readonly temperature: number
   readonly timeoutMs: number
   /** Whole header line carrying the credential, e.g. `Authorization: Bearer {token}`. */
@@ -68,12 +70,40 @@ export const SETTING_KEYS = [
   'promptTemplate',
   'maxBodyWords',
   'temperature',
+  'maxOutputTokens',
   'maxDiffChars',
   'redactSecrets',
   'excludeGlobs',
   // Read for compatibility with the shape that shipped before the single backend list.
   'compatPreset',
 ] as const
+
+/** What the setting holds when the user wants the backend's own default. */
+export const AUTO_MAX_OUTPUT_TOKENS = 0
+
+/**
+ * Reply budget per adapter, used when the setting is left on automatic.
+ *
+ * A reasoning model spends this budget *thinking* before it writes: measured against a real
+ * OpenAI-compatible gateway, `gemini-2.5-flash` burned ~490 tokens reasoning and had 18 left for
+ * the answer, so the JSON came back cut in half. 2048 leaves room for both.
+ *
+ * Ollama keeps 512 on purpose. There the context window is known, and `diffBudgetChars()` subtracts
+ * this number from it — raising the cap there would take the tokens straight out of the diff. The
+ * native adapter also suppresses the reasoning trace at the source (`think: false`), so the budget
+ * pays for the answer alone.
+ */
+export const MAX_OUTPUT_TOKENS_BY_ADAPTER: Readonly<Record<AdapterId, number>> = {
+  ollama: 512,
+  'openai-compat': 2048,
+}
+
+export const MIN_MAX_OUTPUT_TOKENS = 128
+export const MAX_MAX_OUTPUT_TOKENS = 32_768
+
+export function defaultMaxOutputTokens(adapter: AdapterId): number {
+  return MAX_OUTPUT_TOKENS_BY_ADAPTER[adapter]
+}
 
 export const DEFAULTS: Settings = {
   backend: resolveBackend(DEFAULT_BACKEND_ID),
@@ -85,6 +115,7 @@ export const DEFAULTS: Settings = {
   // Same number the extension being replaced used, so behaviour is familiar on day one.
   maxDiffChars: 4000,
   maxBodyWords: DEFAULT_MAX_BODY_WORDS,
+  maxOutputTokens: MAX_OUTPUT_TOKENS_BY_ADAPTER.ollama,
   temperature: 0,
   timeoutMs: DEFAULT_TIMEOUT_MS,
   authHeader: 'Authorization',
@@ -194,6 +225,21 @@ function readHeaders(raw: unknown, problems: SettingsProblem[]): Record<string, 
   return out
 }
 
+/**
+ * The reply budget, resolved.
+ *
+ * `0` is not a limit, it is "whatever this backend needs" — the same shape `promptTemplate` uses,
+ * where the empty string means the built-in prompt. Resolving it here keeps the rest of the code
+ * from ever seeing the sentinel.
+ */
+function readMaxOutputTokens(raw: unknown, adapter: AdapterId, problems: SettingsProblem[]): number {
+  const automatic = defaultMaxOutputTokens(adapter)
+  if (raw === undefined || raw === null || raw === '' || raw === AUTO_MAX_OUTPUT_TOKENS) {
+    return automatic
+  }
+  return num(raw, automatic, MIN_MAX_OUTPUT_TOKENS, MAX_MAX_OUTPUT_TOKENS, 'maxOutputTokens', problems)
+}
+
 function readGlobs(raw: unknown, problems: SettingsProblem[]): readonly string[] {
   if (raw === undefined || raw === null) {
     return DEFAULTS.excludeGlobs
@@ -254,6 +300,7 @@ export function readSettings(raw: Record<string, unknown>): ReadResult {
       promptTemplate: typeof raw.promptTemplate === 'string' ? raw.promptTemplate : DEFAULTS.promptTemplate,
       maxDiffChars: num(raw.maxDiffChars, DEFAULTS.maxDiffChars, 200, 500_000, 'maxDiffChars', problems),
       maxBodyWords: num(raw.maxBodyWords, DEFAULTS.maxBodyWords, 3, 40, 'maxBodyWords', problems),
+      maxOutputTokens: readMaxOutputTokens(raw.maxOutputTokens, provider, problems),
       temperature: num(raw.temperature, DEFAULTS.temperature, 0, 1, 'temperature', problems),
       timeoutMs: num(raw.timeoutMs, DEFAULTS.timeoutMs, 1_000, 600_000, 'timeoutMs', problems),
       authHeader: auth.header,

@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import { generateMessage } from '../out/prompt/pipeline.js'
 import { validateCommitMessage } from '../out/prompt/validate.js'
 import { createProvider } from '../out/providers/registry.js'
+import { defaultMaxOutputTokens } from '../out/settings.js'
 
 /**
  * Measures what the prompting strategy is worth, against a real model and real diffs.
@@ -51,7 +52,7 @@ async function run(label, systemTemplate, structured) {
     const started = Date.now()
     try {
       const outcome = structured
-        ? await generateMessage(provider, item.files, { model: MODEL, language: { tag: 'pt-BR', name: 'português do Brasil' }, temperature: 0, maxBodyWords: 10 })
+        ? await generateMessage(provider, item.files, { model: MODEL, language: { tag: 'pt-BR', name: 'português do Brasil' }, temperature: 0, maxBodyWords: 10, maxTokens: defaultMaxOutputTokens('ollama') })
         : await raw(systemTemplate, item)
       const message = structured ? outcome.message : outcome
       const verdict = validateCommitMessage(message, { maxBodyWords: 10 })

@@ -212,9 +212,14 @@ credential, especially in an extension about commits.
 | setting | type | default |
 |---|---|---|
 | `aiCommitMessages.temperature` | number | `0` |
+| `aiCommitMessages.maxOutputTokens` | number | `0` — the backend's own: 2048 OpenAI-compatible, 512 Ollama |
 | `aiCommitMessages.maxDiffChars` | number | `4000` |
 | `aiCommitMessages.redactSecrets` | boolean | `true` |
 | `aiCommitMessages.excludeGlobs` | array | lockfiles, minified bundles, binaries |
+
+A reasoning model spends `maxOutputTokens` thinking before it writes a word, and an
+OpenAI-compatible endpoint charges that thinking to the same budget as the answer. That is why the
+automatic value is four times larger there than on Ollama, which suppresses the trace at the source.
 
 The prompt is yours to replace: `Insert the default prompt into settings` writes the built-in one
 into `promptTemplate`, and from there it is a plain string you can rewrite. `{types}`, `{language}`,

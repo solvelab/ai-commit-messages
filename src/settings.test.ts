@@ -3,8 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   CHARS_PER_TOKEN,
   DEFAULTS,
+  defaultMaxOutputTokens,
   diffBudgetChars,
   MAX_CONTEXT_TOKENS,
+  MAX_MAX_OUTPUT_TOKENS,
+  MAX_OUTPUT_TOKENS_BY_ADAPTER,
+  MIN_MAX_OUTPUT_TOKENS,
   normalizeBaseUrl,
   readSettings,
   usableContextTokens,
@@ -191,5 +195,53 @@ describe('usableContextTokens — o mesmo número nos dois lados', () => {
     })
     const tokensDoPrompt = Math.ceil(budgetComJanelaCheia / CHARS_PER_TOKEN)
     expect(tokensDoPrompt).toBeGreaterThan(MAX_CONTEXT_TOKENS)
+  })
+})
+
+describe('maxOutputTokens', () => {
+  it('gives an OpenAI-compatible backend room for the reasoning it charges to the same budget', () => {
+    // 512 was the whole cap; gemini-2.5-flash spent ~490 of it thinking and returned half a JSON.
+    expect(readSettings({ provider: 'custom' }).settings.maxOutputTokens).toBe(2048)
+    expect(readSettings({ provider: 'gemini' }).settings.maxOutputTokens).toBe(2048)
+  })
+
+  it('keeps 512 on Ollama, where the cap is subtracted from the diff budget', () => {
+    expect(readSettings({ provider: 'ollama' }).settings.maxOutputTokens).toBe(512)
+    expect(defaultMaxOutputTokens('ollama')).toBe(MAX_OUTPUT_TOKENS_BY_ADAPTER.ollama)
+  })
+
+  it('treats 0 as "ask the backend", not as a limit of zero', () => {
+    expect(readSettings({ provider: 'custom', maxOutputTokens: 0 }).settings.maxOutputTokens).toBe(2048)
+  })
+
+  it('lets an explicit value win over the automatic one', () => {
+    const { settings, problems } = readSettings({ provider: 'custom', maxOutputTokens: 4096 })
+    expect(settings.maxOutputTokens).toBe(4096)
+    expect(problems).toHaveLength(0)
+  })
+
+  it('clamps a value too small to hold a commit message, and says so', () => {
+    const { settings, problems } = readSettings({ provider: 'custom', maxOutputTokens: 8 })
+    expect(settings.maxOutputTokens).toBe(MIN_MAX_OUTPUT_TOKENS)
+    expect(problems.map(p => p.key)).toContain('maxOutputTokens')
+  })
+
+  it('clamps a value above the ceiling', () => {
+    expect(readSettings({ maxOutputTokens: 1_000_000 }).settings.maxOutputTokens).toBe(
+      MAX_MAX_OUTPUT_TOKENS,
+    )
+  })
+
+  it('falls back to the automatic value when the setting is not a number', () => {
+    const { settings, problems } = readSettings({ provider: 'custom', maxOutputTokens: 'lots' })
+    expect(settings.maxOutputTokens).toBe(2048)
+    expect(problems.map(p => p.key)).toContain('maxOutputTokens')
+  })
+
+  it('shrinks the diff budget by exactly what it asks the model to keep', () => {
+    const base = { contextTokens: 32_768, systemPromptChars: 1400, fallbackChars: 4000 }
+    const tight = diffBudgetChars({ ...base, maxOutputTokens: 512 })
+    const roomy = diffBudgetChars({ ...base, maxOutputTokens: 2048 })
+    expect(tight - roomy).toBe(Math.floor(1536 * CHARS_PER_TOKEN))
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { extractJson, generateMessage, PipelineError } from './pipeline.js'
+import { extractJson, generateMessage, PipelineError, TRUNCATED_MESSAGE } from './pipeline.js'
 import type { CommitProvider, GenerateResult } from '../providers/types.js'
 
 const FILES = [{ path: 'src/a.ts', patch: '+const a = 1' }]
@@ -25,6 +25,9 @@ function fakeProvider(replies: (string | GenerateResult)[]): CommitProvider & {
     }),
   }
 }
+
+/** The cap every fixture call sends; the option is required, so no call may omit it. */
+const OPTIONS = { model: 'm', maxTokens: 512 }
 
 const GOOD = JSON.stringify({
   type: 'feat',
@@ -63,7 +66,7 @@ describe('extractJson', () => {
 describe('generateMessage', () => {
   it('renders the message from a valid first reply, without retrying', async () => {
     const provider = fakeProvider([GOOD])
-    const outcome = await generateMessage(provider, FILES, { model: 'm' })
+    const outcome = await generateMessage(provider, FILES, OPTIONS)
 
     expect(outcome.retried).toBe(false)
     expect(outcome.message.split('\n')).toEqual([
@@ -77,7 +80,7 @@ describe('generateMessage', () => {
 
   it('retries once with a correction when the first reply is unusable', async () => {
     const provider = fakeProvider(['I think you should commit something.', GOOD])
-    const outcome = await generateMessage(provider, FILES, { model: 'm' })
+    const outcome = await generateMessage(provider, FILES, OPTIONS)
 
     expect(outcome.retried).toBe(true)
     expect(provider.calls).toHaveLength(2)
@@ -92,13 +95,13 @@ describe('generateMessage', () => {
       body: ['uma frase deliberadamente longa que passa do orçamento de palavras permitido aqui'],
     })
     const provider = fakeProvider([tooLong, GOOD])
-    const outcome = await generateMessage(provider, FILES, { model: 'm', maxBodyWords: 5 })
+    const outcome = await generateMessage(provider, FILES, { ...OPTIONS, maxBodyWords: 5 })
     expect(outcome.retried).toBe(true)
   })
 
   it('gives up after exactly one retry, carrying the raw reply for the log', async () => {
     const provider = fakeProvider(['nope', 'still nope'])
-    await expect(generateMessage(provider, FILES, { model: 'm' })).rejects.toBeInstanceOf(
+    await expect(generateMessage(provider, FILES, OPTIONS)).rejects.toBeInstanceOf(
       PipelineError,
     )
     expect(provider.calls).toHaveLength(2)
@@ -106,20 +109,20 @@ describe('generateMessage', () => {
 
   it('keeps the raw text on the error so it can be logged', async () => {
     const provider = fakeProvider(['nope', 'still nope'])
-    const error = await generateMessage(provider, FILES, { model: 'm' }).catch(e => e)
+    const error = await generateMessage(provider, FILES, OPTIONS).catch(e => e)
     expect((error as PipelineError).raw).toBe('still nope')
   })
 
   it('reports that the provider degraded to plain text', async () => {
     const provider = fakeProvider([{ text: GOOD, degradedToText: true }])
-    const outcome = await generateMessage(provider, FILES, { model: 'm' })
+    const outcome = await generateMessage(provider, FILES, OPTIONS)
     expect(outcome.degradedToText).toBe(true)
   })
 
   it('runs the injected sanitizer before parsing', async () => {
     const provider = fakeProvider([`<think>hmm</think>${GOOD}`])
     const outcome = await generateMessage(provider, FILES, {
-      model: 'm',
+      ...OPTIONS,
       sanitize: raw => raw.replace(/<think>[\s\S]*?<\/think>/g, ''),
     })
     expect(outcome.message).toContain('✨ feat(net):')
@@ -156,7 +159,7 @@ describe('word budget after the retry', () => {
       ],
     })
     const provider = fakeProvider(['lixo', overBudget])
-    const outcome = await generateMessage(provider, FILES, { model: 'm', maxBodyWords: 10 })
+    const outcome = await generateMessage(provider, FILES, { ...OPTIONS, maxBodyWords: 10 })
 
     expect(outcome.retried).toBe(true)
     expect(outcome.message).toContain('mover arquivos')
@@ -166,7 +169,7 @@ describe('word budget after the retry', () => {
 
   it('still fails when nothing usable survives', async () => {
     const provider = fakeProvider(['lixo', JSON.stringify({ type: 'feat', subject: '', body: [] })])
-    await expect(generateMessage(provider, FILES, { model: 'm' })).rejects.toBeInstanceOf(
+    await expect(generateMessage(provider, FILES, OPTIONS)).rejects.toBeInstanceOf(
       PipelineError,
     )
   })
@@ -182,7 +185,7 @@ describe('parse antes de heurística (achados da revisão adversarial)', () => {
     })
     const provider = fakeProvider([reply])
     const outcome = await generateMessage(provider, FILES, {
-      model: 'm',
+      ...OPTIONS,
       sanitize: raw => raw.replace(/<think>[\s\S]*?<\/think>/g, ''),
     })
     expect(outcome.retried).toBe(false)
@@ -193,7 +196,7 @@ describe('parse antes de heurística (achados da revisão adversarial)', () => {
     const good = JSON.stringify({ type: 'feat', subject: 'algo', body: [] })
     const provider = fakeProvider([`<think>deixa eu ver</think>\n${good}`])
     const outcome = await generateMessage(provider, FILES, {
-      model: 'm',
+      ...OPTIONS,
       sanitize: raw => raw.replace(/<think>[\s\S]*?<\/think>/g, ''),
     })
     expect(outcome.message).toContain('feat: algo')
@@ -213,5 +216,62 @@ describe('extractJson não desiste no primeiro objeto', () => {
 
   it('continua devolvendo undefined quando não há objeto nenhum', () => {
     expect(extractJson('{ quebrado sem fechar')).toBeUndefined()
+  })
+})
+
+describe('reply cut off by the token limit', () => {
+  const CUT_OFF = '```json\n{"type":"chore","scope":"prometheus","subject":"configurar estratég'
+
+  it('says the limit was hit instead of blaming the model', async () => {
+    const provider = fakeProvider([{ text: CUT_OFF, degradedToText: false, finishReason: 'length' }])
+    const error = (await generateMessage(provider, FILES, OPTIONS).catch(e => e)) as PipelineError
+
+    expect(error).toBeInstanceOf(PipelineError)
+    expect(error.message).toBe(TRUNCATED_MESSAGE)
+    expect(error.message).toContain('aiCommitMessages.maxOutputTokens')
+    expect(error.raw).toBe(CUT_OFF)
+  })
+
+  it('does not spend a second call that would be cut off at the same limit', async () => {
+    const provider = fakeProvider([{ text: CUT_OFF, degradedToText: false, finishReason: 'length' }])
+    await generateMessage(provider, FILES, OPTIONS).catch(() => undefined)
+    expect(provider.calls).toHaveLength(1)
+  })
+
+  it.each(['max_tokens', 'MAX_TOKENS', 'max_output_tokens', 'max_completion_tokens'])(
+    'recognizes %s, the name other gateways use',
+    async reason => {
+      const provider = fakeProvider([{ text: CUT_OFF, degradedToText: false, finishReason: reason }])
+      const error = (await generateMessage(provider, FILES, OPTIONS).catch(e => e)) as PipelineError
+      expect(error.message).toBe(TRUNCATED_MESSAGE)
+      expect(provider.calls).toHaveLength(1)
+    },
+  )
+
+  it('still retries when the reply is unusable for any other reason', async () => {
+    const provider = fakeProvider([
+      { text: 'I think you should commit something.', degradedToText: false, finishReason: 'stop' },
+      GOOD,
+    ])
+    const outcome = await generateMessage(provider, FILES, OPTIONS)
+
+    expect(outcome.retried).toBe(true)
+    expect(provider.calls).toHaveLength(2)
+  })
+
+  it('reports the limit when it is the corrective retry that gets cut off', async () => {
+    const provider = fakeProvider([
+      'nope',
+      { text: CUT_OFF, degradedToText: false, finishReason: 'length' },
+    ])
+    const error = (await generateMessage(provider, FILES, OPTIONS).catch(e => e)) as PipelineError
+
+    expect(error.message).toBe(TRUNCATED_MESSAGE)
+    expect(provider.calls).toHaveLength(2)
+  })
+
+  it('carries the stop reason out on a good reply, for the log', async () => {
+    const provider = fakeProvider([{ text: GOOD, degradedToText: false, finishReason: 'stop' }])
+    expect((await generateMessage(provider, FILES, OPTIONS)).finishReason).toBe('stop')
   })
 })

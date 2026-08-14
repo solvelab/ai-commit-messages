@@ -260,3 +260,42 @@ describe('the wrong base URL, which is the common mistake', () => {
     await expect(provider.generate(REQUEST)).rejects.toMatchObject({ code: 'model-not-found' })
   })
 })
+
+describe('finish reason', () => {
+  it('carries the stop reason out, so a truncated reply is not read as a broken one', async () => {
+    const fetchImpl = jsonFetch({
+      choices: [{ message: { content: '{"type":"chore","scope":"prom' }, finish_reason: 'length' }],
+    })
+    const provider = new OpenAICompatProvider({ endpoint: 'http://x/v1', fetch: fetchImpl })
+    const result = await provider.generate(REQUEST)
+    expect(result.finishReason).toBe('length')
+  })
+
+  it('leaves it absent when the gateway reports none', async () => {
+    const fetchImpl = jsonFetch(REPLY)
+    const provider = new OpenAICompatProvider({ endpoint: 'http://x/v1', fetch: fetchImpl })
+    expect((await provider.generate(REQUEST)).finishReason).toBeUndefined()
+  })
+
+  it('sends the requested cap in the field the preset dictates', async () => {
+    const fetchImpl = jsonFetch(REPLY)
+    const provider = new OpenAICompatProvider({
+      endpoint: 'http://x/v1',
+      fetch: fetchImpl,
+      presetId: 'custom',
+    })
+    await provider.generate({ ...REQUEST, maxTokens: 2048 })
+    expect(sentBody(fetchImpl).max_tokens).toBe(2048)
+  })
+
+  it('sends it as max_completion_tokens where OpenAI renamed the field', async () => {
+    const fetchImpl = jsonFetch(REPLY)
+    const provider = new OpenAICompatProvider({
+      endpoint: 'https://api.openai.com/v1',
+      fetch: fetchImpl,
+      presetId: 'openai',
+    })
+    await provider.generate({ ...REQUEST, maxTokens: 2048 })
+    expect(sentBody(fetchImpl).max_completion_tokens).toBe(2048)
+  })
+})
