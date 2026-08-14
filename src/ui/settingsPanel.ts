@@ -12,7 +12,7 @@ import { BACKENDS } from '../providers/catalog.js'
 import { createProvider } from '../providers/registry.js'
 import { normalizeBaseUrl, type ProviderId } from '../settings.js'
 import type { FetchLike, ModelInfo } from '../providers/types.js'
-import { formFields } from './formModel.js'
+import { formFields, modelReadPlan } from './formModel.js'
 import { panelHtml } from './panelHtml.js'
 
 /**
@@ -100,15 +100,8 @@ async function handle(message: IncomingMessage, target: vscode.WebviewPanel): Pr
     case 'backendChanged':
       return post(target, message.backendId)
 
-    case 'loadModels': {
-      const models = await listModels(message.backendId, message.endpoint)
-      return void target.webview.postMessage({
-        type: 'models',
-        models: models.list.map(m => ({ id: m.id, label: m.label })),
-        source: models.source,
-        ...(models.error ? { error: models.error } : {}),
-      })
-    }
+    case 'loadModels':
+      return sendModels(target, message.backendId, message.endpoint)
 
     case 'test': {
       const outcome = await listModels(message.backendId, message.endpoint)
@@ -127,13 +120,16 @@ async function handle(message: IncomingMessage, target: vscode.WebviewPanel): Pr
     case 'setKey': {
       const { adapter, base } = credentialTarget(message.backendId, message.endpoint)
       await setTokenValue(adapter, base, message.key)
-      return post(target, message.backendId, message.endpoint)
+      await post(target, message.backendId, message.endpoint)
+      // The key was the only thing missing, so the list is what the person wanted next.
+      return sendModels(target, message.backendId, message.endpoint)
     }
 
     case 'clearKey': {
       const { adapter, base } = credentialTarget(message.backendId, message.endpoint)
       await clearToken(adapter, base)
-      return post(target, message.backendId, message.endpoint)
+      await post(target, message.backendId, message.endpoint)
+      return sendModels(target, message.backendId, message.endpoint)
     }
 
     case 'save': {
@@ -193,6 +189,20 @@ function credentialTarget(backendId: string, endpoint: string): { adapter: Provi
   }
 }
 
+async function sendModels(
+  target: vscode.WebviewPanel,
+  backendId: string,
+  endpoint: string,
+): Promise<void> {
+  const outcome = await listModels(backendId, endpoint)
+  await target.webview.postMessage({
+    type: 'models',
+    models: outcome.list.map(m => ({ id: m.id, label: m.label })),
+    source: outcome.source,
+    ...(outcome.error ? { error: outcome.error } : {}),
+  })
+}
+
 interface ModelOutcome {
   readonly list: readonly ModelInfo[]
   readonly source: 'server' | 'builtin'
@@ -210,8 +220,13 @@ async function listModels(backendId: string, endpoint: string): Promise<ModelOut
     return { list: builtin(backendId), source: 'builtin', error: 'no endpoint to read from' }
   }
 
+  const token = await readToken(adapter, base)
+  const plan = modelReadPlan({ backendId, hasKey: Boolean(token) })
+  if (!plan.ask) {
+    return { list: builtin(backendId), source: 'builtin', ...(plan.reason ? { error: plan.reason } : {}) }
+  }
+
   try {
-    const token = await readToken(adapter, base)
     const provider = createProvider(adapter, {
       endpoint: base,
       fetch: globalThis.fetch as FetchLike,

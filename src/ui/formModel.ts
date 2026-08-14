@@ -47,3 +47,31 @@ export function formFields(backendId: string): FormFields {
       : 'Point this at your server. A path such as /api/generate is trimmed.',
   }
 }
+
+export interface ReadPlan {
+  /** Whether the request should be made at all. */
+  readonly ask: boolean
+  /** What to say when it should not. */
+  readonly reason?: string
+}
+
+/**
+ * Whether the model list can be read yet.
+ *
+ * Asking a backend that requires a credential without one earns a 401, which the panel then reported
+ * as "the key was rejected" — about a key that had never been sent. The missing key is knowable
+ * before the request, so the request is not made and the message says what is actually missing.
+ */
+export function modelReadPlan(input: {
+  readonly backendId: string
+  readonly hasKey: boolean
+}): ReadPlan {
+  const fields = formFields(input.backendId)
+  if (fields.requiresKey && !input.hasKey) {
+    return {
+      ask: false,
+      reason: `${fields.backendLabel} needs an API key — save one above to read its model list`,
+    }
+  }
+  return { ask: true }
+}
