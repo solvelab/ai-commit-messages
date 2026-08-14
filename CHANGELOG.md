@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/solvelab/ai-commit-messages/compare/v1.11.1...v1.12.0) (2026-08-14)
+
+
+### Features
+
+* **ui:** painel de configuração que reage ao backend escolhido ([#80](https://github.com/solvelab/ai-commit-messages/issues/80)) ([1a1720c](https://github.com/solvelab/ai-commit-messages/commit/1a1720c9f3be6384397639474dc394d0ab4910fd)), closes [#79](https://github.com/solvelab/ai-commit-messages/issues/79)
+
 ## [1.11.1](https://github.com/solvelab/ai-commit-messages/compare/v1.11.0...v1.11.1) (2026-08-14)
 
 
