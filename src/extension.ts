@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
-import { generateCommitMessage, initEndpointConfirmations } from './commands/generate.js'
+import {
+  cancelGeneration,
+  generateCommitMessage,
+  initEndpointConfirmations,
+} from './commands/generate.js'
 import { configure } from './commands/configure.js'
 import { diagnose } from './commands/diagnose.js'
 import { cachedModelIds, initModelCache, selectModel } from './commands/selectModel.js'
@@ -46,6 +50,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand(GENERATE_COMMAND, generateCommitMessage),
+    vscode.commands.registerCommand(`${CONFIG_SECTION}.cancelGeneration`, cancelGeneration),
     vscode.commands.registerCommand(MIGRATE_COMMAND, () => migrateLegacySettings(true)),
     vscode.commands.registerCommand(CONFIGURE_COMMAND, configure),
     vscode.commands.registerCommand(PANEL_COMMAND, () => openSettingsPanel(context)),
