@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/solvelab/ai-commit-messages/compare/v1.12.0...v1.13.0) (2026-08-14)
+
+
+### Features
+
+* **config:** trocar de provider leva o endpoint junto, com Undo ([#82](https://github.com/solvelab/ai-commit-messages/issues/82)) ([628e274](https://github.com/solvelab/ai-commit-messages/commit/628e274550c1783d1076e7c25a03de6164d91130)), closes [#81](https://github.com/solvelab/ai-commit-messages/issues/81)
+
 # [1.12.0](https://github.com/solvelab/ai-commit-messages/compare/v1.11.1...v1.12.0) (2026-08-14)
 
 
