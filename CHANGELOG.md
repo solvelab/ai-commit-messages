@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/solvelab/ai-commit-messages/compare/v1.17.0...v1.18.0) (2026-08-14)
+
+
+### Features
+
+* **brand:** adotar a arte nova como ícone e alinhar a cor do botão a ela ([#96](https://github.com/solvelab/ai-commit-messages/issues/96)) ([b130736](https://github.com/solvelab/ai-commit-messages/commit/b13073687850bcde847a74ffd17937cb435023fe)), closes [#F68562](https://github.com/solvelab/ai-commit-messages/issues/F68562) [#E98A6](https://github.com/solvelab/ai-commit-messages/issues/E98A6) [#C55A36](https://github.com/solvelab/ai-commit-messages/issues/C55A36) [#F68562](https://github.com/solvelab/ai-commit-messages/issues/F68562) [#95](https://github.com/solvelab/ai-commit-messages/issues/95)
+
 # [1.17.0](https://github.com/solvelab/ai-commit-messages/compare/v1.16.0...v1.17.0) (2026-08-14)
 
 
