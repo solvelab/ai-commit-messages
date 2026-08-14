@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/solvelab/ai-commit-messages/compare/v1.15.1...v1.16.0) (2026-08-14)
+
+
+### Features
+
+* **ui:** ícone próprio no botão de gerar ([#92](https://github.com/solvelab/ai-commit-messages/issues/92)) ([fe5032c](https://github.com/solvelab/ai-commit-messages/commit/fe5032c103b9106261a2b06a6dc2fd38ebdfc646)), closes [#91](https://github.com/solvelab/ai-commit-messages/issues/91)
+
 ## [1.15.1](https://github.com/solvelab/ai-commit-messages/compare/v1.15.0...v1.15.1) (2026-08-14)
 
 
