@@ -13,13 +13,18 @@
 
 </div>
 
-```
-staged diff  ──▶  budget & redact  ──▶  your LLM  ──▶  validate format  ──▶  commit box
-```
-
 Stage your changes, press the button in the Source Control title bar, and the commit message appears
 in the box — written by a model **you** run, on a server **you** choose. Nothing is sent to a vendor
 you did not configure, and there is no account, no telemetry and no cloud fallback.
+
+<div align="center">
+
+![Generating a commit message from a staged diff](docs/media/demo.gif)
+
+<sub>The window is an illustration — but the message is not: it is the literal output of
+`qwen2.5-coder:7b`, temperature 0, first attempt, no retry.</sub>
+
+</div>
 
 ---
 
@@ -105,6 +110,10 @@ body line is checked against the word budget before the message reaches your com
 The message is written in the language you configure — this page shows English because the page is
 in English; `aiCommitMessages.language` also ships a built-in prompt for `pt-BR`, and any other
 language works by writing your own prompt.
+
+### How it gets there
+
+![From the staged diff to the commit message](docs/media/how-it-works.png)
 
 ### The parts that only matter with local models
 

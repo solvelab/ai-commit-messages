@@ -3,6 +3,8 @@
 Como a extensão é construída e **por quê** cada decisão é o que é. Toda restrição abaixo foi
 verificada na fonte (código da VS Code, doc do Ollama, medição local) — nenhuma é preferência.
 
+![Do diff staged à mensagem de commit](media/how-it-works.svg)
+
 ## Restrições que definem o desenho
 
 ### 1. O ícone não pode ficar dentro da caixa de commit
