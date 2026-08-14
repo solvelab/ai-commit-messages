@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/solvelab/ai-commit-messages/compare/v1.18.0...v1.19.0) (2026-08-14)
+
+
+### Features
+
+* **release:** instalação em uma linha, sem depender de loja ([#108](https://github.com/solvelab/ai-commit-messages/issues/108)) ([f6f8cdc](https://github.com/solvelab/ai-commit-messages/commit/f6f8cdc2d0e1bad99621d8ec43743a47d849145f)), closes [#105](https://github.com/solvelab/ai-commit-messages/issues/105) [#107](https://github.com/solvelab/ai-commit-messages/issues/107)
+
 # [1.18.0](https://github.com/solvelab/ai-commit-messages/compare/v1.17.0...v1.18.0) (2026-08-14)
 
 
