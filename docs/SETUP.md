@@ -36,6 +36,19 @@ xvfb-run -a npm test
 
 Rodar a extensão: <kbd>F5</kbd> na VS Code abre o **Extension Development Host** com ela carregada.
 
+## Instalar em uma linha
+
+```bash
+curl -fsSL -o /tmp/ai-commit-messages.vsix https://github.com/solvelab/ai-commit-messages/releases/latest/download/ai-commit-messages.vsix && code --install-extension /tmp/ai-commit-messages.vsix --force
+```
+
+A URL de nome fixo aponta sempre para a release mais nova, então o comando não envelhece — rodar de
+novo atualiza. Não existe atualização automática por este caminho: a VS Code só atualiza sozinha o
+que veio de uma loja.
+
+Numa sessão remota (WSL, SSH, container), rode de um terminal **daquele lado**, senão a extensão é
+instalada do lado local e aparece esmaecida.
+
 ## Instalar o `.vsix`
 
 ```bash

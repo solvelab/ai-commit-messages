@@ -162,11 +162,19 @@ jobs:
       - name: Build VSIX
         run: npx --yes @vscode/vsce package --out ai-commit-messages-${{ needs.release.outputs.version }}.vsix
 
+      # A cópia de nome fixo é o que dá uma URL permanente:
+      # /releases/latest/download/ai-commit-messages.vsix aponta sempre para a versão mais nova.
+      # A versionada fica, porque é ela que diz o que alguém instalou.
+      - name: Copy the VSIX under a stable name
+        run: cp ai-commit-messages-${{ needs.release.outputs.version }}.vsix ai-commit-messages.vsix
+
       - name: Attach VSIX to the release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ needs.release.outputs.version }}
-          files: ai-commit-messages-${{ needs.release.outputs.version }}.vsix
+          files: |
+            ai-commit-messages-${{ needs.release.outputs.version }}.vsix
+            ai-commit-messages.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
